@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ASC Admin - Mobile Master</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #050505; --card: #141414; --gold: #D4AF37; --text: #fff; --gray: #888; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
+        body { background:var(--bg); color:var(--text); padding-bottom:80px; }
+
+        /* Mobile Header */
+        header { background:var(--card); padding:15px; border-bottom:1px solid #333; position:sticky; top:0; z-index:100; display:flex; justify-content:space-between; align-items:center; }
+        h1 { font-size:1.2rem; color:var(--gold); font-weight:600; }
+        
+        /* Container */
+        .container { padding:15px; max-width:800px; margin:0 auto; }
+        
+        /* Sections */
+        .section { display:none; animation:fadeIn 0.3s ease; }
+        .section.active { display:block; }
+        @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+        /* Cards & Forms */
+        .card { background:var(--card); border-radius:12px; padding:15px; margin-bottom:15px; border:1px solid #222; }
+        label { font-size:0.85rem; color:var(--gray); display:block; margin-bottom:5px; margin-top:10px; }
+        input, select, textarea { width:100%; background:#222; border:1px solid #333; padding:12px; color:white; border-radius:8px; outline:none; }
+        input:focus { border-color:var(--gold); }
+        .url-group { display:flex; gap:5px; margin-bottom:5px; }
+        
+        /* Buttons */
+        .btn { width:100%; padding:12px; background:var(--gold); color:black; font-weight:bold; border:none; border-radius:8px; margin-top:15px; cursor:pointer; }
+        .btn-outline { background:transparent; border:1px solid var(--gold); color:var(--gold); margin-top:5px; }
+        .btn-del { background:#331111; color:#ff4d4d; border:1px solid #ff4d4d; width:auto; padding:5px 10px; font-size:0.8rem; }
+
+        /* Product List */
+        .prod-item { display:flex; gap:10px; border-bottom:1px solid #222; padding-bottom:10px; margin-bottom:10px; }
+        .prod-img { width:60px; height:60px; border-radius:6px; object-fit:cover; background:#222; }
+        .prod-info { flex:1; }
+        .prod-title { font-size:0.95rem; font-weight:600; }
+        .prod-meta { font-size:0.8rem; color:var(--gray); }
+
+        /* Bottom Nav */
+        .bottom-nav { position:fixed; bottom:0; left:0; width:100%; background:#111; border-top:1px solid #333; display:flex; justify-content:space-around; padding:10px 0; z-index:200; }
+        .nav-item { color:var(--gray); text-align:center; font-size:0.7rem; cursor:pointer; }
+        .nav-item i { font-size:1.4rem; display:block; margin-bottom:2px; }
+        .nav-item.active { color:var(--gold); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>ASC ADMIN</h1>
+        <div id="live-rate-badge" style="font-size:0.8rem; background:#222; padding:5px 10px; border-radius:20px; border:1px solid var(--gold);">Rate: ₹0</div>
+    </header>
+
+    <div class="container">
+        
+        <div id="dash-sec" class="section active">
+            <div class="card">
+                <h3 style="color:var(--gold); margin-bottom:10px;">Update Gold Rate</h3>
+                <input type="number" id="gold-rate-input" placeholder="Current Rate (e.g. 7200)">
+                <button class="btn" id="update-rate-btn">UPDATE RATE & RECALC</button>
+            </div>
+            
+            <div class="card">
+                <h3 style="color:var(--gold); margin-bottom:10px;">Category Manager</h3>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="cat-name" placeholder="New Category">
+                    <button class="btn" style="width:auto; margin-top:0;" onclick="addCategory()">ADD</button>
+                </div>
+                <div id="cat-list" style="margin-top:15px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+            </div>
+
+            <div class="card">
+                 <h3 style="color:var(--gold); margin-bottom:10px;">Recent Orders</h3>
+                 <div id="orders-list">Loading...</div>
+            </div>
+        </div>
+
+        <div id="add-sec" class="section">
+            <div class="card">
+                <h3 style="color:var(--gold);">Add New Product</h3>
+                <form id="add-prod-form">
+                    <label>Title</label>
+                    <input type="text" id="p-title" required>
+                    
+                    <label>Description</label>
+                    <textarea id="p-desc" rows="3" placeholder="Product details..."></textarea>
+
+                    <label>Category</label>
+                    <select id="p-cat" required><option>Loading...</option></select>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div>
+                            <label>Weight (g)</label>
+                            <input type="number" step="0.01" id="p-weight" required>
+                        </div>
+                        <div>
+                            <label>Purity (%)</label>
+                            <input type="number" step="0.1" id="p-purity" value="91.6">
+                        </div>
+                    </div>
+                    
+                    <label>Making Charge (₹)</label>
+                    <input type="number" id="p-making" value="500">
+
+                    <label>Image URLs (Multiple)</label>
+                    <div id="url-container">
+                        <div class="url-group"><input type="url" class="img-url" placeholder="Paste Image Link here..." required></div>
+                    </div>
+                    <button type="button" class="btn btn-outline" onclick="addUrlField()">+ Add Another Photo</button>
+
+                    <button type="submit" class="btn">SAVE PRODUCT</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="list-sec" class="section">
+            <h3 style="color:var(--gold); margin-bottom:15px;">Inventory</h3>
+            <div id="inventory-list">Loading products...</div>
+        </div>
+
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('dash-sec', this)">
+            <i class="fas fa-home"></i> Home
+        </div>
+        <div class="nav-item" onclick="switchTab('add-sec', this)">
+            <i class="fas fa-plus-circle"></i> Add
+        </div>
+        <div class="nav-item" onclick="switchTab('list-sec', this)">
+            <i class="fas fa-list"></i> Items
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // CONFIG (Same as yours)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJTI3q7yLPjF_3Hg0MvRJEuTOt02xV7fs",
+            authDomain: "invoice-maker-a31e6.firebaseapp.com",
+            projectId: "invoice-maker-a31e6",
+            storageBucket: "invoice-maker-a31e6.firebasestorage.app",
+            messagingSenderId: "84503037388",
+            appId: "1:84503037388:web:0e4d89f4347376581e0969"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- GLOBAL UI LOGIC ---
+        window.switchTab = (id, el) => {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        window.addUrlField = () => {
+            const div = document.createElement('div');
+            div.className = 'url-group';
+            div.innerHTML = `<input type="url" class="img-url" placeholder="Paste Image Link here..."><span style="color:red; padding:10px;" onclick="this.parentElement.remove()">X</span>`;
+            document.getElementById('url-container').appendChild(div);
+        }
+
+        // --- FIREBASE LOGIC ---
+
+        // 1. Gold Rate
+        onSnapshot(doc(db, "goldRate", "today"), (s) => {
+            if(s.exists()) {
+                const r = s.data().ratePerGram;
+                document.getElementById('live-rate-badge').innerText = `Rate: ₹${r}`;
+                document.getElementById('gold-rate-input').value = r;
+            }
+        });
+
+        document.getElementById('update-rate-btn').addEventListener('click', async () => {
+            const r = Number(document.getElementById('gold-rate-input').value);
+            if(!r) return alert("Enter rate");
+            if(confirm("Update rate and recalculate all prices?")) {
+                await setDoc(doc(db, "goldRate", "today"), { ratePerGram: r, updatedAt: serverTimestamp() });
+                
+                // Batch Update Prices
+                const q = await getDocs(collection(db, "products"));
+                const batch = writeBatch(db);
+                q.forEach(d => {
+                    const p = d.data();
+                    const newPrice = Math.round((p.weightGram * (r * (p.purityPercent/100))) + p.makingCharge);
+                    batch.update(d.ref, { currentPrice: newPrice });
+                });
+                await batch.commit();
+                alert("Done!");
+            }
+        });
+
+        // 2. Categories
+        onSnapshot(collection(db, "categories"), (s) => {
+            const list = document.getElementById('cat-list');
+            const sel = document.getElementById('p-cat');
+            list.innerHTML = '';
+            sel.innerHTML = '<option value="">Select Category</option>';
+            s.forEach(d => {
+                const c = d.data();
+                list.innerHTML += `<span style="background:#222; padding:5px 10px; border-radius:5px; font-size:0.8rem; border:1px solid #444;">${c.name} <i class="fas fa-times" style="color:red; margin-left:5px; cursor:pointer" onclick="delCat('${d.id}')"></i></span>`;
+                sel.innerHTML += `<option value="${c.slug}">${c.name}</option>`;
+            });
+        });
+
+        window.addCategory = async () => {
+            const n = document.getElementById('cat-name').value;
+            if(n) await addDoc(collection(db, "categories"), { name: n, slug: n.toLowerCase().replace(/ /g,'-') });
+            document.getElementById('cat-name').value = '';
+        }
+        window.delCat = async(id) => { if(confirm("Delete category?")) deleteDoc(doc(db, "categories", id)); }
+
+        // 3. Products (ADD & LIST)
+        document.getElementById('add-prod-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const urls = Array.from(document.querySelectorAll('.img-url')).map(i => i.value).filter(v => v);
+            if(urls.length === 0) return alert("At least 1 image URL needed");
+
+            const r = Number(document.getElementById('gold-rate-input').value) || 0;
+            const w = Number(document.getElementById('p-weight').value);
+            const pur = Number(document.getElementById('p-purity').value);
+            const mak = Number(document.getElementById('p-making').value);
+            
+            const price = r > 0 ? Math.round((w * (r * (pur/100))) + mak) : 0;
+
+            const pData = {
+                title: document.getElementById('p-title').value,
+                description: document.getElementById('p-desc').value, // New Field
+                categoryId: document.getElementById('p-cat').value,
+                weightGram: w,
+                purityPercent: pur,
+                makingCharge: mak,
+                images: urls, // Array of URLs
+                currentPrice: price,
+                createdAt: serverTimestamp()
+            };
+
+            await addDoc(collection(db, "products"), pData);
+            alert("Product Added!");
+            e.target.reset();
+            // Reset URL inputs
+            document.getElementById('url-container').innerHTML = `<div class="url-group"><input type="url" class="img-url" placeholder="Paste Image Link here..." required></div>`;
+        });
+
+        onSnapshot(query(collection(db, "products"), orderBy("createdAt", "desc")), (s) => {
+            const el = document.getElementById('inventory-list');
+            el.innerHTML = '';
+            if(s.empty) { el.innerHTML = 'No products found.'; return; }
+            
+            s.forEach(d => {
+                const p = d.data();
+                el.innerHTML += `
+                    <div class="prod-item">
+                        <img src="${p.images[0]}" class="prod-img">
+                        <div class="prod-info">
+                            <div class="prod-title">${p.title}</div>
+                            <div class="prod-meta">₹${p.currentPrice} | ${p.weightGram}g</div>
+                            <div style="font-size:0.75rem; color:#666; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${p.description || ''}</div>
+                        </div>
+                        <button class="btn-del" onclick="delProd('${d.id}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+            });
+        });
+
+        window.delProd = async(id) => { if(confirm("Delete?")) deleteDoc(doc(db, "products", id)); }
+
+        // 4. Orders
+        onSnapshot(query(collection(db, "orders"), orderBy("placedAt", "desc")), (s) => {
+            const oDiv = document.getElementById('orders-list');
+            oDiv.innerHTML = '';
+            s.forEach(d => {
+                const o = d.data();
+                oDiv.innerHTML += `
+                    <div class="prod-item" style="display:block; border-color:#333;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                            <span style="color:var(--gold)">${o.customerName}</span>
+                            <span style="font-weight:bold;">₹${o.totalAmount}</span>
+                        </div>
+                        <div style="font-size:0.8rem; color:#888;">${o.items.length} Items • ${new Date(o.placedAt?.seconds*1000).toLocaleDateString()}</div>
+                    </div>
+                `;
+            });
+        });
+
+    </script>
+</body>
+</html>
