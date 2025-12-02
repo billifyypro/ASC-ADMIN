@@ -69,6 +69,16 @@
 
         /* STATUS BADGE */
         .status-badge { padding:5px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; text-transform:uppercase; }
+
+        /* CHAT ADMIN */
+        .chat-list-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; transition: 0.2s; }
+        .chat-list-item:hover { background: #222; }
+        .chat-list-item.unread { border-left: 3px solid var(--gold); background: #1a1a1a; }
+        .chat-window { height: 400px; display: flex; flex-direction: column; }
+        .msg-list { flex-grow: 1; overflow-y: auto; background: #000; padding: 10px; border: 1px solid #333; margin-bottom: 10px; }
+        .admin-msg { text-align: right; margin: 5px; color: var(--gold); }
+        .user-msg { text-align: left; margin: 5px; color: #fff; }
+
     </style>
 </head>
 <body>
@@ -100,8 +110,8 @@
             
             <div class="card">
                 <h3><i class="fas fa-robot"></i> Auto-Reply Config</h3>
-                <input type="text" id="auto-keyword" placeholder="Trigger Keyword (e.g. 'Hello', 'Help')" required>
-                <textarea id="auto-message" placeholder="Automated Reply Message" rows="3" required></textarea>
+                <input type="text" id="auto-keyword" placeholder="Trigger Keyword (Legacy)" style="display:none">
+                <textarea id="auto-message" placeholder="Automated First Reply Message for New Chats" rows="3" required></textarea>
                 <button class="btn" onclick="saveAutoMessage()" style="background:#555; color:#fff;">SAVE AUTO-REPLY</button>
             </div>
 
@@ -116,12 +126,6 @@
                 </form>
                 <h4 style="color:#aaa; margin-top:20px; border-bottom:1px solid #333; padding-bottom:5px; font-size:0.9rem;">Live Ads</h4>
                 <div id="ads-list-m">Loading...</div>
-            </div>
-
-            <div class="card">
-                <h3><i class="fas fa-cogs"></i> System Config</h3>
-                <input type="number" id="supp-num" placeholder="Support WhatsApp (No spaces)">
-                <button class="btn" onclick="saveSupport()" style="background:#333; color:#fff; border:1px solid #444;">SAVE CONFIG</button>
             </div>
         </div>
 
@@ -172,6 +176,29 @@
             <div id="users-list">Loading...</div>
         </div>
 
+        <!-- NEW CHAT SECTION -->
+        <div id="tab-messages" class="section">
+            <h3><i class="fas fa-comments"></i> Customer Support Messages</h3>
+            <div id="chat-users-list" style="background:#111; border:1px solid #333; border-radius:4px;">
+                <p style="padding:15px; color:#666;">Loading active conversations...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ADMIN CHAT MODAL -->
+    <div id="admin-chat-modal" class="modal">
+        <div class="modal-box">
+            <h3 id="chat-user-name">User Chat</h3>
+            <div class="chat-window">
+                <div id="admin-msg-list" class="msg-list"></div>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="admin-chat-in" placeholder="Type reply...">
+                    <button class="btn" style="width:auto;" onclick="sendAdminReply()">SEND</button>
+                </div>
+            </div>
+            <button class="btn" style="background:#222; margin-top:10px; color:#fff;" onclick="closeAdminChat()">CLOSE</button>
+        </div>
     </div>
 
     <div id="edit-prod-modal" class="modal">
@@ -237,19 +264,20 @@
     <div class="bottom-nav">
         <div class="nav-item active" onclick="switchTab('tab-dash', this)"><i class="fas fa-chart-line"></i>Dash</div>
         <div class="nav-item" onclick="switchTab('tab-orders', this)"><i class="fas fa-box"></i>Orders</div>
+        <div class="nav-item" onclick="switchTab('tab-messages', this)"><i class="fas fa-comments"></i>Msgs</div>
         <div class="nav-item" onclick="switchTab('tab-users', this)"><i class="fas fa-users"></i>Users</div>
         <div class="nav-item" onclick="switchTab('tab-products', this)"><i class="fas fa-gem"></i>Stock</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyCJTI3q7yLPjF_3Hg0MvRJEuTOt02xV7fs", authDomain: "invoice-maker-a31e6.firebaseapp.com", projectId: "invoice-maker-a31e6", storageBucket: "invoice-maker-a31e6.firebasestorage.app", messagingSenderId: "84503037388", appId: "1:84503037388:web:0e4d89f4347376581e0969" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let currOrdId=null, editProdId=null, users=[], allOrders=[];
+        let currOrdId=null, editProdId=null, users=[], allOrders=[], currChatUid=null, chatUnsub=null;
 
         window.switchTab = (id, el) => {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -258,33 +286,82 @@
             el.classList.add('active');
         };
 
-        // RATES (INSTANT UPDATE)
+        // RATES
         onSnapshot(doc(db,"rates","today"), s=>{ if(s.exists()){ document.getElementById('disp-gold').innerText=`Gold: ₹${s.data().gold}`; document.getElementById('disp-silver').innerText=`Silver: ₹${s.data().silver}`; }});
         document.getElementById('btn-rate').onclick = async() => { await setDoc(doc(db,"rates","today"), { gold: Number(document.getElementById('gold-rate-input').value), silver: Number(document.getElementById('silver-rate-input').value) }, {merge:true}); alert("Prices synced to User App instantly."); };
         
-        // CONFIG
-        onSnapshot(doc(db,"config","support"), s=>{ if(s.exists()) document.getElementById('supp-num').value=s.data().number; });
-        window.saveSupport = async() => { await setDoc(doc(db,"config","support"), {number:document.getElementById('supp-num').value}, {merge:true}); alert("Config Saved"); };
-
-        // NEW: AUTO-MESSAGE CONFIG
+        // AUTO-REPLY CONFIG
         onSnapshot(doc(db,"config","auto-reply"), s=>{ 
             if(s.exists()){
                 const data = s.data();
-                document.getElementById('auto-keyword').value = data.keyword || '';
                 document.getElementById('auto-message').value = data.message || '';
             } 
         });
         window.saveAutoMessage = async() => {
-            const keyword = document.getElementById('auto-keyword').value.trim().toLowerCase();
             const message = document.getElementById('auto-message').value.trim();
-            if (!keyword || !message) return alert("Keyword and message are required.");
-            
-            await setDoc(doc(db,"config","auto-reply"), {
-                keyword: keyword,
-                message: message
-            }, {merge:true});
-            alert("Auto-Reply Saved! (Requires a chat feature to be fully functional on user side)");
+            if (!message) return alert("Message is required.");
+            await setDoc(doc(db,"config","auto-reply"), { message: message }, {merge:true});
+            alert("Auto-Reply Saved! Users will receive this message instantly when they start a new chat.");
         };
+
+        // CHAT SYSTEM (ADMIN SIDE)
+        onSnapshot(query(collection(db, "chats"), orderBy("lastUpdated", "desc")), s => {
+            const l = document.getElementById('chat-users-list');
+            l.innerHTML = '';
+            if(s.empty) l.innerHTML = '<p style="padding:15px; color:#666;">No active conversations.</p>';
+            
+            s.forEach(docSnap => {
+                const c = docSnap.data();
+                const lastMsg = c.messages[c.messages.length-1]?.text || 'No messages';
+                const unreadClass = c.unreadAdmin ? 'unread' : '';
+                l.innerHTML += `
+                    <div class="chat-list-item ${unreadClass}" onclick="openChat('${docSnap.id}', '${c.userName}')">
+                        <div style="font-weight:bold; color:var(--gold);">${c.userName}</div>
+                        <div style="font-size:0.8rem; color:#aaa; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${lastMsg}</div>
+                    </div>
+                `;
+            });
+        });
+
+        window.openChat = (uid, name) => {
+            currChatUid = uid;
+            document.getElementById('chat-user-name').innerText = `Chat with ${name}`;
+            document.getElementById('admin-chat-modal').style.display = 'flex';
+            
+            // Mark as read
+            updateDoc(doc(db, "chats", uid), { unreadAdmin: false });
+
+            // Listen to messages
+            if(chatUnsub) chatUnsub();
+            chatUnsub = onSnapshot(doc(db, "chats", uid), (s) => {
+                const msgs = s.data().messages || [];
+                const list = document.getElementById('admin-msg-list');
+                list.innerHTML = '';
+                msgs.forEach(m => {
+                    const cls = m.sender === 'admin' ? 'admin-msg' : 'user-msg';
+                    list.innerHTML += `<div class="${cls}"><b>${m.sender}:</b> ${m.text}</div>`;
+                });
+                list.scrollTop = list.scrollHeight;
+            });
+        };
+
+        window.sendAdminReply = async() => {
+            const txt = document.getElementById('admin-chat-in').value.trim();
+            if(!txt || !currChatUid) return;
+            
+            await updateDoc(doc(db, "chats", currChatUid), {
+                messages: arrayUnion({ sender: 'admin', text: txt, time: Date.now() }),
+                lastUpdated: serverTimestamp(),
+                unreadUser: true // (Optional) Could trigger badge on user side
+            });
+            document.getElementById('admin-chat-in').value = '';
+        };
+
+        window.closeAdminChat = () => {
+            document.getElementById('admin-chat-modal').style.display='none';
+            if(chatUnsub) chatUnsub();
+        };
+
 
         // AD MANAGEMENT
         document.getElementById('add-ad-form').addEventListener('submit', async(e) => {
@@ -296,23 +373,17 @@
                 link: document.getElementById('ad-link').value,
                 createdAt: serverTimestamp()
             });
-            alert("Ad Published!");
-            e.target.reset();
+            alert("Ad Published!"); e.target.reset();
         });
 
         onSnapshot(query(collection(db, "ads"), orderBy("createdAt", "desc")), s => {
-            const l = document.getElementById('ads-list-m');
-            l.innerHTML = '';
+            const l = document.getElementById('ads-list-m'); l.innerHTML = '';
             s.forEach(d => {
                 const ad = d.data();
-                l.innerHTML += `<div class="item-row">
-                    <span style="font-weight:bold; color:#fff;">${ad.title}</span>
-                    <button class="btn" style="width:auto; padding:8px 15px; background:#f44336; color:white; font-size:0.75rem;" onclick="delAd('${d.id}')">DELETE</button>
-                </div>`;
+                l.innerHTML += `<div class="item-row"><span style="font-weight:bold; color:#fff;">${ad.title}</span><button class="btn" style="width:auto; padding:8px 15px; background:#f44336; color:white; font-size:0.75rem;" onclick="delAd('${d.id}')">DELETE</button></div>`;
             });
         });
         window.delAd = async(id) => { if(confirm("Delete Ad?")) await deleteDoc(doc(db,"ads",id)); };
-
 
         // CATEGORIES
         onSnapshot(collection(db,"categories"), s=>{ 
@@ -384,8 +455,7 @@
         function renderOrders(list) {
             const pList = document.getElementById('pending-orders-list');
             const cList = document.getElementById('confirmed-orders-list');
-            pList.innerHTML = '';
-            cList.innerHTML = '';
+            pList.innerHTML = ''; cList.innerHTML = '';
 
             list.filter(o => o.status !== 'REJECTED' && o.status !== 'CANCELLED').forEach(o => {
                 let badgeColor = '#666';
@@ -400,29 +470,19 @@
                     <span class="status-badge" style="background:${badgeColor}; color:#fff;">${o.status}</span>
                 </div>`;
                 
-                if (o.status === 'Pending') {
-                    pList.innerHTML += html;
-                } else if (o.status !== 'ORDER DELIVERED') {
-                    cList.innerHTML += html;
-                }
+                if (o.status === 'Pending') pList.innerHTML += html;
+                else if (o.status !== 'ORDER DELIVERED') cList.innerHTML += html;
             });
-
             if (pList.innerHTML === '') pList.innerHTML = '<p style="color:#666; padding:10px 0;">No new pending orders.</p>';
             if (cList.innerHTML === '') cList.innerHTML = '<p style="color:#666; padding:10px 0;">No active confirmed orders.</p>';
         }
 
-        window.searchOrders = () => { // Order ID Search
-            const q = document.getElementById('order-search').value.toLowerCase();
-            const filtered = allOrders.filter(o => o.orderId.toLowerCase().includes(q));
-            renderOrders(filtered);
-        };
+        window.searchOrders = () => { const q = document.getElementById('order-search').value.toLowerCase(); renderOrders(allOrders.filter(o => o.orderId.toLowerCase().includes(q))); };
 
-        // MODIFIED: openOrd to load fees
         window.openOrd = async(id) => { 
             currOrdId=id; const o=(await getDoc(doc(db,"orders",id))).data(); 
             document.getElementById('m-oid').innerText = o.orderId;
             
-            // Calculate Subtotal for display
             const delivery = o.deliveryCharge || 0;
             const platform = o.platformFee || 0;
             const total = o.totalAmount || 0;
@@ -430,16 +490,13 @@
 
             document.getElementById('m-details').innerHTML = `<b style="color:#fff">Client:</b> ${o.customerName}<br><b>Phone:</b> ${o.customerPhone}<br><b>Pincode:</b> ${o.customerPincode}<br><b>Address:</b> ${o.customerAddress}<br><hr style="border-color:#333; margin:10px 0;"><b>Items:</b><br>${o.items.map(i=>`<div>- ${i.title} (₹${i.p.toLocaleString()})</div>`).join('')}<div style="text-align:right; color:white; margin-top:10px; font-weight:bold;">Subtotal: ₹${subtotal.toLocaleString()}</div>`;
             
-            // Load Fees
             document.getElementById('m-delivery-fee').value = delivery;
             document.getElementById('m-platform-fee').value = platform;
-
             document.getElementById('m-status-sel').value = o.status; 
             document.getElementById('m-note').value = o.trackingNote||''; 
             document.getElementById('ord-modal').style.display='flex'; 
         };
 
-        // MODIFIED: saveOrderUpdate to save fees and recalculate total
         window.saveOrderUpdate = async() => { 
             const status = document.getElementById('m-status-sel').value;
             const note = document.getElementById('m-note').value;
@@ -448,20 +505,12 @@
             
             const oDoc = await getDoc(doc(db,"orders",currOrdId));
             const o = oDoc.data();
-            
-            // Calculate Item Total (Subtotal)
-            let itemTotal = 0;
-            o.items.forEach(i => itemTotal += i.p);
-
-            // Calculate New Total
+            let itemTotal = 0; o.items.forEach(i => itemTotal += i.p);
             const newTotal = itemTotal + delivery + platform;
 
             await updateDoc(doc(db,"orders",currOrdId), { 
-                status: status, 
-                trackingNote: note,
-                deliveryCharge: delivery,
-                platformFee: platform,
-                totalAmount: newTotal 
+                status: status, trackingNote: note,
+                deliveryCharge: delivery, platformFee: platform, totalAmount: newTotal 
             }); 
             document.getElementById('ord-modal').style.display='none'; 
             alert("Order Status and Fees Updated Instantly!");
@@ -484,7 +533,6 @@
         window.searchUsers = () => { const q=document.getElementById('user-search').value.toLowerCase(); renderUsers(users.filter(u=>u.username.toLowerCase().includes(q) || u.phone.includes(q))); };
         window.togBlock = async(id, st) => { if(confirm("Change Status?")) await updateDoc(doc(db,"users",id), {isBlocked:!st}); };
 
-        // NEW: VIEW USER ORDERS
         window.viewUserOrders = (uid, name) => {
             document.getElementById('uom-title').innerText = `Orders for ${name}`;
             const l = document.getElementById('uom-list');
@@ -492,10 +540,7 @@
             
             onSnapshot(query(collection(db, "orders"), where("uid", "==", uid), orderBy("placedAt", "desc")), s => {
                 l.innerHTML = '';
-                if (s.empty) {
-                    l.innerHTML = '<p style="color:#666; text-align:center;">No orders found for this user.</p>';
-                    return;
-                }
+                if (s.empty) { l.innerHTML = '<p style="color:#666; text-align:center;">No orders found for this user.</p>'; return; }
                 s.forEach(oDoc => {
                     const o = oDoc.data();
                     let badgeColor = '#666';
@@ -512,9 +557,9 @@
                     </div>`;
                 });
             });
-
             document.getElementById('user-ord-modal').style.display = 'flex';
         };
     </script>
 </body>
 </html>
+
