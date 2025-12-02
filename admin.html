@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ASC Admin</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #050505; --card: #141414; --gold: #D4AF37; --silver: #C0C0C0; --text: #fff; --red: #ff4444; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+        body { background:var(--bg); color:var(--text); padding-bottom:80px; }
+
+        header { background:rgba(20,20,20,0.95); padding:15px; border-bottom:1px solid #333; position:sticky; top:0; z-index:100; display:flex; justify-content:space-between; align-items:center; }
+        .container { padding:15px; max-width:800px; margin:0 auto; }
+        
+        /* Sections */
+        .section { display:none; animation:fadeIn 0.3s; }
+        .section.active { display:block; }
+        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+        .card { background:var(--card); border-radius:12px; padding:15px; margin-bottom:15px; border:1px solid #222; }
+        h3 { color:var(--gold); margin-bottom:15px; font-size:1rem; border-left:3px solid var(--gold); padding-left:10px; }
+
+        input, select, textarea { width:100%; background:#0a0a0a; border:1px solid #333; padding:12px; color:white; border-radius:6px; margin-bottom:10px; outline:none; font-size:14px; }
+        input:focus, select:focus, textarea:focus { border-color:var(--gold); }
+        
+        .btn { width:100%; padding:10px; background:var(--gold); border:none; border-radius:6px; font-weight:bold; cursor:pointer; color:black; }
+        .btn:active { opacity:0.8; }
+
+        /* List Items */
+        .inv-item { display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; margin-bottom:5px; border-radius:6px; border:1px solid #333; }
+        
+        /* Bottom Nav */
+        .bottom-nav { position:fixed; bottom:0; left:0; width:100%; background:#111; border-top:1px solid #222; display:flex; justify-content:space-around; padding:12px 0; z-index:200; }
+        .nav-item { color:#666; font-size:0.7rem; text-align:center; cursor:pointer; flex:1; }
+        .nav-item.active { color:var(--gold); }
+        .nav-item i { font-size:1.3rem; display:block; margin-bottom:3px; }
+
+        /* Modals */
+        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:3000; display:none; justify-content:center; align-items:center; padding:20px; }
+        .modal-card { background:#1a1a1a; width:100%; max-width:400px; padding:20px; border-radius:12px; border:1px solid #333; max-height:90vh; overflow-y:auto; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 style="color:var(--gold); font-size:1.2rem;">ASC ADMIN</h1>
+        <div style="font-size:0.7rem; text-align:right;">
+            <div id="disp-gold" style="color:var(--gold);">Gold: ...</div>
+            <div id="disp-silver" style="color:var(--silver);">Silver: ...</div>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- 1. DASHBOARD -->
+        <div id="tab-dash" class="section active">
+            <div class="card">
+                <h3>Update Rates</h3>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="gold-rate-input" placeholder="Gold Rate">
+                    <input type="number" id="silver-rate-input" placeholder="Silver Rate">
+                </div>
+                <button class="btn" id="btn-rate">UPDATE RATES</button>
+            </div>
+            
+            <div class="card">
+                <h3>Support Settings</h3>
+                <input type="number" id="supp-num" placeholder="WhatsApp Number (e.g. 919876543210)">
+                <button class="btn" onclick="saveSupport()">SAVE NUMBER</button>
+            </div>
+
+            <div class="card">
+                <h3>Fake Rating Generator</h3>
+                <select id="fake-prod-select"><option>Loading Products...</option></select>
+                <input type="text" id="fake-name" placeholder="Customer Name">
+                <select id="fake-stars">
+                    <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                    <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                    <option value="3">⭐⭐⭐ 3 Stars</option>
+                </select>
+                <textarea id="fake-text" placeholder="Review Comment..."></textarea>
+                <input type="url" id="fake-img-url" placeholder="Review Photo URL (Optional)">
+                <button class="btn" onclick="submitFakeReview()">PUBLISH REVIEW</button>
+            </div>
+        </div>
+
+        <!-- 2. ADS / BANNERS -->
+        <div id="tab-ads" class="section">
+            <div class="card">
+                <h3>Post Advertisement</h3>
+                <input type="text" id="ad-title" placeholder="Post Title">
+                <input type="url" id="ad-img" placeholder="Image URL">
+                <textarea id="ad-desc" placeholder="Description..."></textarea>
+                <button class="btn" onclick="submitAd()">UPLOAD POST</button>
+            </div>
+        </div>
+
+        <!-- 3. PRODUCTS & STOCK -->
+        <div id="tab-products" class="section">
+            
+            <div class="card">
+                <h3>Category Manager</h3>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="new-cat-name" placeholder="New Category Name">
+                    <button class="btn" style="width:auto;" onclick="addCategory()">ADD</button>
+                </div>
+                <div id="cat-list-m" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>Add New Product</h3>
+                <form id="add-prod-form">
+                    <input type="text" id="p-title" placeholder="Product Title" required>
+                    <textarea id="p-imgs" placeholder="Image URLs (Comma separated)" rows="2" required></textarea>
+                    <div style="display:flex; gap:10px;">
+                        <input type="number" id="p-weight" placeholder="Weight (g)" step="0.01" required>
+                        <input type="number" id="p-making" placeholder="Making (₹)" value="500">
+                    </div>
+                    <select id="p-cat"><option value="">Select Category</option></select>
+                    <button class="btn">ADD TO STOCK</button>
+                </form>
+            </div>
+
+            <h3>Current Stock</h3>
+            <div id="inventory-list">Loading...</div>
+        </div>
+
+        <!-- 4. ORDERS -->
+        <div id="tab-orders" class="section">
+            <h3>Recent Orders</h3>
+            <div id="orders-list">Loading...</div>
+        </div>
+
+        <!-- 5. USERS -->
+        <div id="tab-users" class="section">
+            <h3>User Manager</h3>
+            <input type="text" id="user-search" placeholder="Search User by Name/Phone..." oninput="searchUsers()">
+            <div id="users-list">Loading...</div>
+        </div>
+
+    </div>
+
+    <!-- MODALS -->
+    
+    <!-- Edit Product Modal -->
+    <div id="edit-prod-modal" class="modal">
+        <div class="modal-card">
+            <h3>Edit Product</h3>
+            <input type="text" id="e-title" placeholder="Title">
+            <input type="number" id="e-weight" placeholder="Weight">
+            <input type="number" id="e-making" placeholder="Making Charge">
+            <button class="btn" onclick="saveProductEdit()">SAVE CHANGES</button>
+            <button class="btn" style="background:#333; margin-top:10px; color:white;" onclick="document.getElementById('edit-prod-modal').style.display='none'">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div id="ord-modal" class="modal">
+        <div class="modal-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <h3 id="m-oid">Order ID</h3>
+                <i class="fas fa-times" onclick="document.getElementById('ord-modal').style.display='none'" style="color:white; cursor:pointer; font-size:1.5rem;"></i>
+            </div>
+            <div id="m-details" style="margin-bottom:15px; font-size:0.9rem; color:#ccc;"></div>
+            
+            <label style="color:var(--gold); font-size:0.8rem;">Update Status</label>
+            <select id="m-status-sel">
+                <option value="Pending">Pending</option>
+                <option value="ORDER CONFIRMED">ORDER CONFIRMED</option>
+                <option value="ORDER PACKED">ORDER PACKED</option>
+                <option value="ORDER SHIPPED">ORDER SHIPPED</option>
+                <option value="ORDER DELIVERED">ORDER DELIVERED</option>
+                <option value="REJECTED">REJECTED</option>
+            </select>
+            
+            <label style="color:var(--gold); font-size:0.8rem;">Tracking Note</label>
+            <textarea id="m-note" rows="2" placeholder="e.g. Arriving tomorrow..."></textarea>
+            
+            <button class="btn" onclick="saveOrderUpdate()">UPDATE & NOTIFY</button>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('tab-dash', this)"><i class="fas fa-chart-line"></i>Dash</div>
+        <div class="nav-item" onclick="switchTab('tab-ads', this)"><i class="fas fa-bullhorn"></i>Ads</div>
+        <div class="nav-item" onclick="switchTab('tab-orders', this)"><i class="fas fa-box"></i>Orders</div>
+        <div class="nav-item" onclick="switchTab('tab-users', this)"><i class="fas fa-users"></i>Users</div>
+        <div class="nav-item" onclick="switchTab('tab-products', this)"><i class="fas fa-gem"></i>Items</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyCJTI3q7yLPjF_3Hg0MvRJEuTOt02xV7fs", authDomain: "invoice-maker-a31e6.firebaseapp.com", projectId: "invoice-maker-a31e6", storageBucket: "invoice-maker-a31e6.firebasestorage.app", messagingSenderId: "84503037388", appId: "1:84503037388:web:0e4d89f4347376581e0969" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currOrdId = null, editProdId = null, users = [];
+
+        // GLOBAL FUNCTIONS
+        window.switchTab = (id, el) => {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+        };
+
+        // 1. RATES & SUPPORT
+        onSnapshot(doc(db,"rates","today"), s=>{ if(s.exists()){ document.getElementById('disp-gold').innerText=`G: ₹${s.data().gold}`; document.getElementById('disp-silver').innerText=`S: ₹${s.data().silver}`; }});
+        onSnapshot(doc(db,"config","support"), s=>{ if(s.exists()) document.getElementById('supp-num').value=s.data().number; });
+        
+        document.getElementById('btn-rate').onclick = async() => { await setDoc(doc(db,"rates","today"), { gold: Number(document.getElementById('gold-rate-input').value), silver: Number(document.getElementById('silver-rate-input').value) }); alert("Rates Updated"); };
+        window.saveSupport = async() => { await setDoc(doc(db,"config","support"), {number:document.getElementById('supp-num').value}, {merge:true}); alert("Support Number Saved"); };
+
+        // 2. CATEGORIES
+        onSnapshot(collection(db,"categories"), s=>{ 
+            const l=document.getElementById('p-cat'); 
+            const m=document.getElementById('cat-list-m'); 
+            l.innerHTML='<option value="">Select Category</option>'; 
+            m.innerHTML=''; 
+            s.forEach(d=>{ 
+                l.innerHTML+=`<option value="${d.data().slug}">${d.data().name}</option>`; 
+                m.innerHTML+=`<div style="color:white; padding:5px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${d.data().name} <span style="color:red; cursor:pointer;" onclick="delCat('${d.id}')">X</span></div>`; 
+            }); 
+        });
+        window.addCategory = async() => { const n=document.getElementById('new-cat-name').value; if(n) await addDoc(collection(db,"categories"), {name:n, slug:n.toLowerCase().replace(/ /g,'-')}); document.getElementById('new-cat-name').value=''; };
+        window.delCat = async(id) => { if(confirm("Delete Category?")) await deleteDoc(doc(db,"categories",id)); };
+
+        // 3. PRODUCTS & STOCK
+        document.getElementById('add-prod-form').addEventListener('submit', async(e)=>{ 
+            e.preventDefault(); 
+            const imgs = document.getElementById('p-imgs').value.split(',').map(u=>u.trim()).filter(u=>u); 
+            await addDoc(collection(db,"products"), { 
+                title:document.getElementById('p-title').value, 
+                images:imgs, 
+                category:document.getElementById('p-cat').value, 
+                weightGram:Number(document.getElementById('p-weight').value), 
+                makingCharge:Number(document.getElementById('p-making').value), 
+                rating:5, ratingCount:0, createdAt:serverTimestamp() 
+            }); 
+            alert("Product Added"); e.target.reset(); 
+        });
+        
+        onSnapshot(collection(db,"products"), s=>{
+            const l=document.getElementById('inventory-list'); l.innerHTML='';
+            const f=document.getElementById('fake-prod-select'); f.innerHTML='<option>Select Product</option>';
+            s.forEach(d=>{
+                const p=d.data();
+                f.innerHTML+=`<option value="${d.id}">${p.title}</option>`;
+                l.innerHTML+=`
+                    <div class="inv-item">
+                        <div><b>${p.title}</b><br><small style="color:#888;">${p.weightGram}g • ₹${p.makingCharge} MC</small></div>
+                        <div>
+                            <button class="btn" style="width:auto; padding:5px 10px; background:#2196f3; margin-right:5px;" onclick="openEditProd('${d.id}')">EDIT</button>
+                            <button class="btn" style="width:auto; padding:5px 10px; background:#f44336;" onclick="delP('${d.id}')">DEL</button>
+                        </div>
+                    </div>`;
+            });
+        });
+        window.delP = async(id) => { if(confirm("Delete Item?")) await deleteDoc(doc(db,"products",id)); };
+        window.openEditProd = async(id) => { 
+            editProdId=id; 
+            const p=(await getDoc(doc(db,"products",id))).data(); 
+            document.getElementById('e-title').value=p.title; 
+            document.getElementById('e-weight').value=p.weightGram; 
+            document.getElementById('e-making').value=p.makingCharge; 
+            document.getElementById('edit-prod-modal').style.display='flex'; 
+        };
+        window.saveProductEdit = async() => { 
+            await updateDoc(doc(db,"products",editProdId), { 
+                title:document.getElementById('e-title').value, 
+                weightGram:Number(document.getElementById('e-weight').value), 
+                makingCharge:Number(document.getElementById('e-making').value) 
+            }); 
+            document.getElementById('edit-prod-modal').style.display='none'; 
+        };
+
+        // 4. ORDERS
+        onSnapshot(query(collection(db,"orders"), orderBy("placedAt","desc")), s=>{
+            const l=document.getElementById('orders-list'); l.innerHTML='';
+            s.forEach(d=>{ 
+                const o=d.data(); 
+                l.innerHTML+=`
+                <div class="inv-item" style="cursor:pointer;" onclick="openOrd('${d.id}')">
+                    <div>
+                        <b style="color:var(--gold)">${o.orderId}</b><br>
+                        <small>${o.customerName}</small>
+                    </div>
+                    <span style="background:#333; padding:4px 8px; border-radius:4px; font-size:0.8rem;">${o.status}</span>
+                </div>`; 
+            });
+        });
+        window.openOrd = async(id) => { 
+            currOrdId=id; 
+            const o=(await getDoc(doc(db,"orders",id))).data(); 
+            document.getElementById('m-oid').innerText = o.orderId;
+            document.getElementById('m-details').innerHTML = `
+                <b>Customer:</b> ${o.customerName}<br>
+                <b>Phone:</b> ${o.customerPhone}<br>
+                <b>Address:</b> ${o.customerAddress}<br>
+                <b>Pincode:</b> ${o.customerPincode}<br>
+                <div style="background:#222; padding:10px; margin-top:10px; border-radius:6px;">
+                    ${o.items.map(i=>`<div>${i.title}</div>`).join('')}
+                    <div style="text-align:right; color:var(--gold); margin-top:5px;">Total: ₹${o.totalAmount}</div>
+                </div>
+            `;
+            document.getElementById('m-status-sel').value = o.status; 
+            document.getElementById('m-note').value = o.trackingNote||''; 
+            document.getElementById('ord-modal').style.display='flex'; 
+        };
+        window.saveOrderUpdate = async() => { 
+            await updateDoc(doc(db,"orders",currOrdId), { 
+                status:document.getElementById('m-status-sel').value, 
+                trackingNote:document.getElementById('m-note').value 
+            }); 
+            document.getElementById('ord-modal').style.display='none'; 
+        };
+
+        // 5. ADS / POSTS
+        window.submitAd = async() => { 
+            await addDoc(collection(db,"posts"), { 
+                title:document.getElementById('ad-title').value, 
+                image:document.getElementById('ad-img').value, 
+                desc:document.getElementById('ad-desc').value, 
+                date:serverTimestamp() 
+            }); 
+            alert("Ad Posted"); 
+        };
+
+        // 6. FAKE REVIEWS
+        window.submitFakeReview = async() => { 
+            const pid = document.getElementById('fake-prod-select').value; 
+            if(!pid) return alert("Select Product");
+            const stars = Number(document.getElementById('fake-stars').value); 
+            await addDoc(collection(db,"reviews"), { 
+                productId:pid, 
+                userName:document.getElementById('fake-name').value, 
+                rating:stars, 
+                comment:document.getElementById('fake-text').value, 
+                image:document.getElementById('fake-img-url').value, 
+                isFake:true, 
+                date:serverTimestamp() 
+            }); 
+            const pRef=doc(db,"products",pid); 
+            const p=(await getDoc(pRef)).data(); 
+            const nC=(p.ratingCount||0)+1; 
+            const nR=(((p.rating||0)*(p.ratingCount||0))+stars)/nC; 
+            await updateDoc(pRef,{rating:nR, ratingCount:nC}); 
+            alert("Fake Review Added"); 
+        };
+
+        // 7. USERS
+        onSnapshot(collection(db,"users"), s=>{ 
+            users = []; 
+            s.forEach(d => users.push({id:d.id, ...d.data()})); 
+            renderUsers(users); 
+        });
+        function renderUsers(list) {
+            const l=document.getElementById('users-list'); l.innerHTML='';
+            list.forEach(u=>{ 
+                l.innerHTML+=`
+                <div class="inv-item">
+                    <span>${u.username} <small>(${u.phone})</small></span>
+                    <button class="btn" style="width:auto; padding:5px 10px; background:${u.isBlocked?'#4caf50':'#ff4444'}" onclick="togBlock('${u.id}',${u.isBlocked})">${u.isBlocked?'Unblock':'Block'}</button>
+                </div>`; 
+            });
+        }
+        window.searchUsers = () => { 
+            const q=document.getElementById('user-search').value.toLowerCase(); 
+            renderUsers(users.filter(u=>u.username.toLowerCase().includes(q) || u.phone.includes(q))); 
+        };
+        window.togBlock = async(id, st) => { if(confirm("Change Status?")) await updateDoc(doc(db,"users",id), {isBlocked:!st}); };
+
+    </script>
+</body>
+</html>
