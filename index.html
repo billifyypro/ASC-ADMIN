@@ -2,295 +2,519 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ASC Admin - Mobile Master</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASC COMMAND | Admin Console</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: #141414; --gold: #D4AF37; --text: #fff; --gray: #888; }
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
+        :root { --bg:#090909; --panel:#141414; --gold:#D4AF37; --text:#e0e0e0; --border:#333; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Roboto', sans-serif; }
         body { background:var(--bg); color:var(--text); padding-bottom:80px; }
 
-        /* Mobile Header */
-        header { background:var(--card); padding:15px; border-bottom:1px solid #333; position:sticky; top:0; z-index:100; display:flex; justify-content:space-between; align-items:center; }
-        h1 { font-size:1.2rem; color:var(--gold); font-weight:600; }
+        /* HEADER */
+        header { 
+            background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); 
+            padding:15px 25px; border-bottom:1px solid var(--border); 
+            position:sticky; top:0; z-index:100; 
+            display:flex; justify-content:space-between; align-items:center; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        h1 { font-family:'Cinzel'; color:var(--gold); font-size:1.4rem; letter-spacing: 2px; }
         
-        /* Container */
-        .container { padding:15px; max-width:800px; margin:0 auto; }
-        
-        /* Sections */
-        .section { display:none; animation:fadeIn 0.3s ease; }
+        /* LAYOUT */
+        .container { padding:25px; max-width:1000px; margin:0 auto; }
+        .section { display:none; animation:fadeIn 0.4s; }
         .section.active { display:block; }
         @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-        /* Cards & Forms */
-        .card { background:var(--card); border-radius:12px; padding:15px; margin-bottom:15px; border:1px solid #222; }
-        label { font-size:0.85rem; color:var(--gray); display:block; margin-bottom:5px; margin-top:10px; }
-        input, select, textarea { width:100%; background:#222; border:1px solid #333; padding:12px; color:white; border-radius:8px; outline:none; }
-        input:focus { border-color:var(--gold); }
-        .url-group { display:flex; gap:5px; margin-bottom:5px; }
+        /* CARDS */
+        .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:25px; margin-bottom:25px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        h3 { color:var(--gold); margin-bottom:20px; font-weight:500; font-family:'Cinzel'; border-bottom:1px solid #222; padding-bottom:10px; }
+
+        /* FORMS */
+        input, select, textarea { 
+            width:100%; background:#000; border:1px solid var(--border); 
+            padding:14px; color:#fff; border-radius:4px; margin-bottom:15px; outline:none; font-size:0.9rem; transition:0.3s;
+        }
+        input:focus { border-color:var(--gold); background:#0a0a0a; }
+
+        /* BUTTONS */
+        .btn { 
+            width:100%; padding:14px; background:linear-gradient(135deg, #bf953f, #aa771c); 
+            border:none; border-radius:4px; font-weight:bold; cursor:pointer; color:#000; 
+            text-transform:uppercase; letter-spacing:1px; font-size:0.9rem; transition:0.3s;
+        }
+        .btn:hover { filter: brightness(1.1); box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
         
-        /* Buttons */
-        .btn { width:100%; padding:12px; background:var(--gold); color:black; font-weight:bold; border:none; border-radius:8px; margin-top:15px; cursor:pointer; }
-        .btn-outline { background:transparent; border:1px solid var(--gold); color:var(--gold); margin-top:5px; }
-        .btn-del { background:#331111; color:#ff4d4d; border:1px solid #ff4d4d; width:auto; padding:5px 10px; font-size:0.8rem; }
+        /* LIST ITEMS */
+        .item-row { 
+            display:flex; justify-content:space-between; align-items:center; 
+            background:#1a1a1a; padding:18px; margin-bottom:12px; 
+            border:1px solid #2a2a2a; border-radius:6px; transition:0.2s;
+        }
+        .item-row:hover { border-color:var(--gold); background:#202020; }
+        
+        /* NAV */
+        .bottom-nav { 
+            position:fixed; bottom:0; width:100%; background:#111; 
+            border-top:1px solid var(--border); display:flex; justify-content:space-around; 
+            padding:15px; z-index:200; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }
+        .nav-item { color:#666; font-size:0.75rem; text-align:center; cursor:pointer; flex:1; transition:0.3s; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-item.active { color:var(--gold); transform: translateY(-2px); }
+        .nav-item i { font-size:1.3rem; display:block; margin-bottom:6px; }
 
-        /* Product List */
-        .prod-item { display:flex; gap:10px; border-bottom:1px solid #222; padding-bottom:10px; margin-bottom:10px; }
-        .prod-img { width:60px; height:60px; border-radius:6px; object-fit:cover; background:#222; }
-        .prod-info { flex:1; }
-        .prod-title { font-size:0.95rem; font-weight:600; }
-        .prod-meta { font-size:0.8rem; color:var(--gray); }
+        /* MODAL */
+        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:none; justify-content:center; align-items:center; padding:20px; z-index:3000; backdrop-filter: blur(5px); }
+        .modal-box { background:#141414; width:100%; max-width:600px; padding:30px; border:1px solid var(--border); border-radius:8px; max-height:90vh; overflow-y:auto; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
 
-        /* Bottom Nav */
-        .bottom-nav { position:fixed; bottom:0; left:0; width:100%; background:#111; border-top:1px solid #333; display:flex; justify-content:space-around; padding:10px 0; z-index:200; }
-        .nav-item { color:var(--gray); text-align:center; font-size:0.7rem; cursor:pointer; }
-        .nav-item i { font-size:1.4rem; display:block; margin-bottom:2px; }
-        .nav-item.active { color:var(--gold); }
+        /* STATUS BADGE */
+        .status-badge { padding:5px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; text-transform:uppercase; }
     </style>
 </head>
 <body>
-
     <header>
-        <h1>ASC ADMIN</h1>
-        <div id="live-rate-badge" style="font-size:0.8rem; background:#222; padding:5px 10px; border-radius:20px; border:1px solid var(--gold);">Rate: ₹0</div>
+        <h1>ASC COMMAND</h1>
+        <div style="text-align:right; font-size:0.8rem; color:#888;">
+            <div id="disp-gold" style="color:var(--gold);">Gold: ...</div>
+            <div id="disp-silver">Silver: ...</div>
+        </div>
     </header>
 
     <div class="container">
         
-        <div id="dash-sec" class="section active">
+        <div id="tab-dash" class="section active">
             <div class="card">
-                <h3 style="color:var(--gold); margin-bottom:10px;">Update Gold Rate</h3>
-                <input type="number" id="gold-rate-input" placeholder="Current Rate (e.g. 7200)">
-                <button class="btn" id="update-rate-btn">UPDATE RATE & RECALC</button>
+                <h3><i class="fas fa-coins"></i> Update Live Rates</h3>
+                <div style="display:flex; gap:15px;">
+                    <div style="flex:1;">
+                        <label style="font-size:0.8rem; color:#888;">Gold (₹)</label>
+                        <input type="number" id="gold-rate-input">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.8rem; color:#888;">Silver (₹)</label>
+                        <input type="number" id="silver-rate-input">
+                    </div>
+                </div>
+                <button class="btn" id="btn-rate">PUSH LIVE UPDATE (0.01s Sync)</button>
             </div>
             
             <div class="card">
-                <h3 style="color:var(--gold); margin-bottom:10px;">Category Manager</h3>
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="cat-name" placeholder="New Category">
-                    <button class="btn" style="width:auto; margin-top:0;" onclick="addCategory()">ADD</button>
-                </div>
-                <div id="cat-list" style="margin-top:15px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+                <h3><i class="fas fa-robot"></i> Auto-Reply Config</h3>
+                <input type="text" id="auto-keyword" placeholder="Trigger Keyword (e.g. 'Hello', 'Help')" required>
+                <textarea id="auto-message" placeholder="Automated Reply Message" rows="3" required></textarea>
+                <button class="btn" onclick="saveAutoMessage()" style="background:#555; color:#fff;">SAVE AUTO-REPLY</button>
             </div>
 
             <div class="card">
-                 <h3 style="color:var(--gold); margin-bottom:10px;">Recent Orders</h3>
-                 <div id="orders-list">Loading...</div>
+                <h3><i class="fas fa-bullhorn"></i> Manage Promotions</h3>
+                <form id="add-ad-form">
+                    <input type="text" id="ad-title" placeholder="Ad Title" required>
+                    <input type="text" id="ad-image-url" placeholder="Image URL (Full Path)" required>
+                    <textarea id="ad-desc" placeholder="Ad Description (Optional)" rows="2"></textarea>
+                    <input type="url" id="ad-link" placeholder="Link/URL (Optional)">
+                    <button class="btn" style="background:#555; color:#fff;">PUBLISH AD</button>
+                </form>
+                <h4 style="color:#aaa; margin-top:20px; border-bottom:1px solid #333; padding-bottom:5px; font-size:0.9rem;">Live Ads</h4>
+                <div id="ads-list-m">Loading...</div>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-cogs"></i> System Config</h3>
+                <input type="number" id="supp-num" placeholder="Support WhatsApp (No spaces)">
+                <button class="btn" onclick="saveSupport()" style="background:#333; color:#fff; border:1px solid #444;">SAVE CONFIG</button>
             </div>
         </div>
 
-        <div id="add-sec" class="section">
+        <div id="tab-products" class="section">
             <div class="card">
-                <h3 style="color:var(--gold);">Add New Product</h3>
+                <h3><i class="fas fa-plus"></i> Add Inventory</h3>
                 <form id="add-prod-form">
-                    <label>Title</label>
-                    <input type="text" id="p-title" required>
-                    
-                    <label>Description</label>
-                    <textarea id="p-desc" rows="3" placeholder="Product details..."></textarea>
-
-                    <label>Category</label>
-                    <select id="p-cat" required><option>Loading...</option></select>
-
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                        <div>
-                            <label>Weight (g)</label>
-                            <input type="number" step="0.01" id="p-weight" required>
-                        </div>
-                        <div>
-                            <label>Purity (%)</label>
-                            <input type="number" step="0.1" id="p-purity" value="91.6">
-                        </div>
+                    <input type="text" id="p-title" placeholder="Product Title" required>
+                    <textarea id="p-desc" placeholder="Product Details & Description" rows="3"></textarea>
+                    <textarea id="p-imgs" placeholder="Image URLs (Comma separated)" rows="2" required></textarea>
+                    <div style="display:flex; gap:15px;">
+                        <input type="number" id="p-weight" placeholder="Weight (g)" step="0.01" required>
+                        <input type="number" id="p-making" placeholder="Making Charge (₹)" value="500">
                     </div>
-                    
-                    <label>Making Charge (₹)</label>
-                    <input type="number" id="p-making" value="500">
-
-                    <label>Image URLs (Multiple)</label>
-                    <div id="url-container">
-                        <div class="url-group"><input type="url" class="img-url" placeholder="Paste Image Link here..." required></div>
-                    </div>
-                    <button type="button" class="btn btn-outline" onclick="addUrlField()">+ Add Another Photo</button>
-
-                    <button type="submit" class="btn">SAVE PRODUCT</button>
+                    <input type="number" id="p-price" placeholder="Fixed Price (Leave empty for auto-calc)" style="border-color:var(--gold);">
+                    <select id="p-cat"><option value="">Loading Categories...</option></select>
+                    <button class="btn">PUBLISH TO APP</button>
                 </form>
             </div>
+            
+            <div class="card">
+                <h3><i class="fas fa-tags"></i> Categories</h3>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="new-cat-name" placeholder="New Category Name">
+                    <button class="btn" style="width:auto;" onclick="addCategory()">ADD</button>
+                </div>
+                <div id="cat-list-m" style="margin-top:15px;"></div>
+            </div>
+
+            <h3 style="margin-top:30px;">Live Inventory</h3>
+            <div id="inventory-list">Loading...</div>
         </div>
 
-        <div id="list-sec" class="section">
-            <h3 style="color:var(--gold); margin-bottom:15px;">Inventory</h3>
-            <div id="inventory-list">Loading products...</div>
+        <div id="tab-orders" class="section">
+            <h3><i class="fas fa-box-open"></i> Recent Orders</h3>
+            <input type="text" id="order-search" placeholder="Search by Order ID (e.g. #ASC123456)..." oninput="searchOrders()">
+            
+            <h4 style="color:var(--gold); margin-top:20px; border-bottom:1px solid #333; padding-bottom:10px; font-size:1rem;">New / Pending Orders</h4>
+            <div id="pending-orders-list" style="margin-bottom:30px;">Loading...</div>
+
+            <h4 style="color:var(--gold); margin-top:20px; border-bottom:1px solid #333; padding-bottom:10px; font-size:1rem;">Confirmed / Active Orders</h4>
+            <div id="confirmed-orders-list">Loading...</div>
+        </div>
+
+        <div id="tab-users" class="section">
+            <h3><i class="fas fa-users"></i> User Database</h3>
+            <input type="text" id="user-search" placeholder="Search by Name or Phone..." oninput="searchUsers()">
+            <div id="users-list">Loading...</div>
         </div>
 
     </div>
 
+    <div id="edit-prod-modal" class="modal">
+        <div class="modal-box">
+            <h3>Edit Item</h3>
+            <label style="font-size:0.8rem; color:#888;">Title</label>
+            <input type="text" id="e-title">
+            <label style="font-size:0.8rem; color:#888;">Description</label>
+            <textarea id="e-desc" rows="4"></textarea>
+            <div style="display:flex; gap:10px;">
+                <div><label style="font-size:0.8rem; color:#888;">Weight (g)</label><input type="number" id="e-weight"></div>
+                <div><label style="font-size:0.8rem; color:#888;">Making (₹)</label><input type="number" id="e-making"></div>
+            </div>
+            <label style="font-size:0.8rem; color:#888;">Fixed Price (Override)</label>
+            <input type="number" id="e-price">
+            <button class="btn" onclick="saveProductEdit()">SAVE & SYNC INSTANTLY</button>
+            <button class="btn" style="background:#222; margin-top:10px; color:#fff;" onclick="document.getElementById('edit-prod-modal').style.display='none'">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="ord-modal" class="modal">
+        <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h3 id="m-oid" style="margin:0;">Order #</h3>
+                <i class="fas fa-times" onclick="document.getElementById('ord-modal').style.display='none'" style="color:#fff; cursor:pointer;"></i>
+            </div>
+            <div id="m-details" style="background:#0a0a0a; padding:20px; border-radius:4px; margin-bottom:20px; font-size:0.9rem; color:#ccc; line-height:1.6; border:1px solid #333;"></div>
+            
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label style="color:var(--gold); font-size:0.8rem;">Delivery Charge (₹)</label>
+                    <input type="number" id="m-delivery-fee" placeholder="Delivery Charge">
+                </div>
+                <div style="flex:1;">
+                    <label style="color:var(--gold); font-size:0.8rem;">Platform Fee (₹)</label>
+                    <input type="number" id="m-platform-fee" placeholder="Platform Fee">
+                </div>
+            </div>
+
+            <label style="color:var(--gold);">Update Status</label>
+            <select id="m-status-sel">
+                <option value="Pending">Pending</option>
+                <option value="ORDER CONFIRMED">ORDER CONFIRMED</option>
+                <option value="ORDER PACKED">ORDER PACKED</option>
+                <option value="ORDER SHIPPED">ORDER SHIPPED</option>
+                <option value="OUT FOR DELIVERY">OUT FOR DELIVERY</option> <option value="ORDER DELIVERED">ORDER DELIVERED</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="CANCELLED">CANCELLED (User)</option>
+            </select>
+            <textarea id="m-note" rows="2" placeholder="Tracking ID / Admin Note..."></textarea>
+            <button class="btn" onclick="saveOrderUpdate()">UPDATE CLIENT STATUS</button>
+        </div>
+    </div>
+
+    <div id="user-ord-modal" class="modal">
+        <div class="modal-box">
+            <h3 id="uom-title" style="border-bottom:none;"></h3>
+            <button class="btn" style="background:#222; margin-bottom:20px; color:#fff;" onclick="document.getElementById('user-ord-modal').style.display='none'">CLOSE</button>
+            <div id="uom-list"></div>
+        </div>
+    </div>
+
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('dash-sec', this)">
-            <i class="fas fa-home"></i> Home
-        </div>
-        <div class="nav-item" onclick="switchTab('add-sec', this)">
-            <i class="fas fa-plus-circle"></i> Add
-        </div>
-        <div class="nav-item" onclick="switchTab('list-sec', this)">
-            <i class="fas fa-list"></i> Items
-        </div>
+        <div class="nav-item active" onclick="switchTab('tab-dash', this)"><i class="fas fa-chart-line"></i>Dash</div>
+        <div class="nav-item" onclick="switchTab('tab-orders', this)"><i class="fas fa-box"></i>Orders</div>
+        <div class="nav-item" onclick="switchTab('tab-users', this)"><i class="fas fa-users"></i>Users</div>
+        <div class="nav-item" onclick="switchTab('tab-products', this)"><i class="fas fa-gem"></i>Stock</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-        // CONFIG (Same as yours)
-        const firebaseConfig = {
-            apiKey: "AIzaSyCJTI3q7yLPjF_3Hg0MvRJEuTOt02xV7fs",
-            authDomain: "invoice-maker-a31e6.firebaseapp.com",
-            projectId: "invoice-maker-a31e6",
-            storageBucket: "invoice-maker-a31e6.firebasestorage.app",
-            messagingSenderId: "84503037388",
-            appId: "1:84503037388:web:0e4d89f4347376581e0969"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyCJTI3q7yLPjF_3Hg0MvRJEuTOt02xV7fs", authDomain: "invoice-maker-a31e6.firebaseapp.com", projectId: "invoice-maker-a31e6", storageBucket: "invoice-maker-a31e6.firebasestorage.app", messagingSenderId: "84503037388", appId: "1:84503037388:web:0e4d89f4347376581e0969" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- GLOBAL UI LOGIC ---
+        let currOrdId=null, editProdId=null, users=[], allOrders=[];
+
         window.switchTab = (id, el) => {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             el.classList.add('active');
-        }
+        };
 
-        window.addUrlField = () => {
-            const div = document.createElement('div');
-            div.className = 'url-group';
-            div.innerHTML = `<input type="url" class="img-url" placeholder="Paste Image Link here..."><span style="color:red; padding:10px;" onclick="this.parentElement.remove()">X</span>`;
-            document.getElementById('url-container').appendChild(div);
-        }
+        // RATES (INSTANT UPDATE)
+        onSnapshot(doc(db,"rates","today"), s=>{ if(s.exists()){ document.getElementById('disp-gold').innerText=`Gold: ₹${s.data().gold}`; document.getElementById('disp-silver').innerText=`Silver: ₹${s.data().silver}`; }});
+        document.getElementById('btn-rate').onclick = async() => { await setDoc(doc(db,"rates","today"), { gold: Number(document.getElementById('gold-rate-input').value), silver: Number(document.getElementById('silver-rate-input').value) }, {merge:true}); alert("Prices synced to User App instantly."); };
+        
+        // CONFIG
+        onSnapshot(doc(db,"config","support"), s=>{ if(s.exists()) document.getElementById('supp-num').value=s.data().number; });
+        window.saveSupport = async() => { await setDoc(doc(db,"config","support"), {number:document.getElementById('supp-num').value}, {merge:true}); alert("Config Saved"); };
 
-        // --- FIREBASE LOGIC ---
-
-        // 1. Gold Rate
-        onSnapshot(doc(db, "goldRate", "today"), (s) => {
-            if(s.exists()) {
-                const r = s.data().ratePerGram;
-                document.getElementById('live-rate-badge').innerText = `Rate: ₹${r}`;
-                document.getElementById('gold-rate-input').value = r;
-            }
+        // NEW: AUTO-MESSAGE CONFIG
+        onSnapshot(doc(db,"config","auto-reply"), s=>{ 
+            if(s.exists()){
+                const data = s.data();
+                document.getElementById('auto-keyword').value = data.keyword || '';
+                document.getElementById('auto-message').value = data.message || '';
+            } 
         });
+        window.saveAutoMessage = async() => {
+            const keyword = document.getElementById('auto-keyword').value.trim().toLowerCase();
+            const message = document.getElementById('auto-message').value.trim();
+            if (!keyword || !message) return alert("Keyword and message are required.");
+            
+            await setDoc(doc(db,"config","auto-reply"), {
+                keyword: keyword,
+                message: message
+            }, {merge:true});
+            alert("Auto-Reply Saved! (Requires a chat feature to be fully functional on user side)");
+        };
 
-        document.getElementById('update-rate-btn').addEventListener('click', async () => {
-            const r = Number(document.getElementById('gold-rate-input').value);
-            if(!r) return alert("Enter rate");
-            if(confirm("Update rate and recalculate all prices?")) {
-                await setDoc(doc(db, "goldRate", "today"), { ratePerGram: r, updatedAt: serverTimestamp() });
-                
-                // Batch Update Prices
-                const q = await getDocs(collection(db, "products"));
-                const batch = writeBatch(db);
-                q.forEach(d => {
-                    const p = d.data();
-                    const newPrice = Math.round((p.weightGram * (r * (p.purityPercent/100))) + p.makingCharge);
-                    batch.update(d.ref, { currentPrice: newPrice });
-                });
-                await batch.commit();
-                alert("Done!");
-            }
-        });
-
-        // 2. Categories
-        onSnapshot(collection(db, "categories"), (s) => {
-            const list = document.getElementById('cat-list');
-            const sel = document.getElementById('p-cat');
-            list.innerHTML = '';
-            sel.innerHTML = '<option value="">Select Category</option>';
-            s.forEach(d => {
-                const c = d.data();
-                list.innerHTML += `<span style="background:#222; padding:5px 10px; border-radius:5px; font-size:0.8rem; border:1px solid #444;">${c.name} <i class="fas fa-times" style="color:red; margin-left:5px; cursor:pointer" onclick="delCat('${d.id}')"></i></span>`;
-                sel.innerHTML += `<option value="${c.slug}">${c.name}</option>`;
-            });
-        });
-
-        window.addCategory = async () => {
-            const n = document.getElementById('cat-name').value;
-            if(n) await addDoc(collection(db, "categories"), { name: n, slug: n.toLowerCase().replace(/ /g,'-') });
-            document.getElementById('cat-name').value = '';
-        }
-        window.delCat = async(id) => { if(confirm("Delete category?")) deleteDoc(doc(db, "categories", id)); }
-
-        // 3. Products (ADD & LIST)
-        document.getElementById('add-prod-form').addEventListener('submit', async (e) => {
+        // AD MANAGEMENT
+        document.getElementById('add-ad-form').addEventListener('submit', async(e) => {
             e.preventDefault();
-            const urls = Array.from(document.querySelectorAll('.img-url')).map(i => i.value).filter(v => v);
-            if(urls.length === 0) return alert("At least 1 image URL needed");
-
-            const r = Number(document.getElementById('gold-rate-input').value) || 0;
-            const w = Number(document.getElementById('p-weight').value);
-            const pur = Number(document.getElementById('p-purity').value);
-            const mak = Number(document.getElementById('p-making').value);
-            
-            const price = r > 0 ? Math.round((w * (r * (pur/100))) + mak) : 0;
-
-            const pData = {
-                title: document.getElementById('p-title').value,
-                description: document.getElementById('p-desc').value, // New Field
-                categoryId: document.getElementById('p-cat').value,
-                weightGram: w,
-                purityPercent: pur,
-                makingCharge: mak,
-                images: urls, // Array of URLs
-                currentPrice: price,
+            await addDoc(collection(db, "ads"), {
+                title: document.getElementById('ad-title').value,
+                imageUrl: document.getElementById('ad-image-url').value,
+                description: document.getElementById('ad-desc').value,
+                link: document.getElementById('ad-link').value,
                 createdAt: serverTimestamp()
-            };
-
-            await addDoc(collection(db, "products"), pData);
-            alert("Product Added!");
+            });
+            alert("Ad Published!");
             e.target.reset();
-            // Reset URL inputs
-            document.getElementById('url-container').innerHTML = `<div class="url-group"><input type="url" class="img-url" placeholder="Paste Image Link here..." required></div>`;
         });
 
-        onSnapshot(query(collection(db, "products"), orderBy("createdAt", "desc")), (s) => {
-            const el = document.getElementById('inventory-list');
-            el.innerHTML = '';
-            if(s.empty) { el.innerHTML = 'No products found.'; return; }
+        onSnapshot(query(collection(db, "ads"), orderBy("createdAt", "desc")), s => {
+            const l = document.getElementById('ads-list-m');
+            l.innerHTML = '';
+            s.forEach(d => {
+                const ad = d.data();
+                l.innerHTML += `<div class="item-row">
+                    <span style="font-weight:bold; color:#fff;">${ad.title}</span>
+                    <button class="btn" style="width:auto; padding:8px 15px; background:#f44336; color:white; font-size:0.75rem;" onclick="delAd('${d.id}')">DELETE</button>
+                </div>`;
+            });
+        });
+        window.delAd = async(id) => { if(confirm("Delete Ad?")) await deleteDoc(doc(db,"ads",id)); };
+
+
+        // CATEGORIES
+        onSnapshot(collection(db,"categories"), s=>{ 
+            const l=document.getElementById('p-cat'); const m=document.getElementById('cat-list-m'); l.innerHTML='<option value="">Select Category</option>'; m.innerHTML=''; 
+            s.forEach(d=>{ l.innerHTML+=`<option value="${d.data().slug}">${d.data().name}</option>`; m.innerHTML+=`<div style="color:#aaa; padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">${d.data().name} <span style="color:#ff4444; cursor:pointer; font-weight:bold;" onclick="delCat('${d.id}')">DELETE</span></div>`; }); 
+        });
+        window.addCategory = async() => { const n=document.getElementById('new-cat-name').value; if(n) await addDoc(collection(db,"categories"), {name:n, slug:n.toLowerCase().replace(/ /g,'-')}); document.getElementById('new-cat-name').value=''; };
+        window.delCat = async(id) => { if(confirm("Delete Category?")) await deleteDoc(doc(db,"categories",id)); };
+
+        // PRODUCTS
+        document.getElementById('add-prod-form').addEventListener('submit', async(e)=>{ 
+            e.preventDefault(); 
+            const imgs = document.getElementById('p-imgs').value.split(',').map(u=>u.trim()).filter(u=>u);
+            const pr = document.getElementById('p-price').value;
+            await addDoc(collection(db,"products"), { 
+                title:document.getElementById('p-title').value, 
+                desc:document.getElementById('p-desc').value,
+                images:imgs, 
+                category:document.getElementById('p-cat').value, 
+                weightGram:Number(document.getElementById('p-weight').value), 
+                makingCharge:Number(document.getElementById('p-making').value), 
+                currentPrice: pr ? Number(pr) : null,
+                rating:5, ratingCount:0, createdAt:serverTimestamp() 
+            }); 
+            alert("Product is LIVE!"); e.target.reset(); 
+        });
+
+        onSnapshot(collection(db,"products"), s=>{
+            const l=document.getElementById('inventory-list'); l.innerHTML='';
+            s.forEach(d=>{
+                const p=d.data();
+                l.innerHTML+=`<div class="item-row">
+                    <div><b style="color:white; font-size:1rem;">${p.title}</b><br><small style="color:#888;">${p.weightGram}g • MC: ₹${p.makingCharge}</small><div style="font-size:0.75rem; color:var(--gold); margin-top:4px;">★ ${p.rating?.toFixed(1)||5} (${p.ratingCount||0})</div></div>
+                    <div><button class="btn" style="width:auto; padding:8px 15px; background:#2196f3; margin-right:5px; color:white; font-size:0.75rem;" onclick="openEditProd('${d.id}')">EDIT</button><button class="btn" style="width:auto; padding:8px 15px; background:#f44336; color:white; font-size:0.75rem;" onclick="delP('${d.id}')">DEL</button></div>
+                </div>`;
+            });
+        });
+        window.delP = async(id) => { if(confirm("Delete Product permanently?")) await deleteDoc(doc(db,"products",id)); };
+        
+        window.openEditProd = async(id) => { 
+            editProdId=id; 
+            const p=(await getDoc(doc(db,"products",id))).data(); 
+            document.getElementById('e-title').value=p.title; 
+            document.getElementById('e-desc').value=p.desc||'';
+            document.getElementById('e-weight').value=p.weightGram; 
+            document.getElementById('e-making').value=p.makingCharge; 
+            document.getElementById('e-price').value=p.currentPrice||'';
+            document.getElementById('edit-prod-modal').style.display='flex'; 
+        };
+        window.saveProductEdit = async() => { 
+            const pr = document.getElementById('e-price').value;
+            await updateDoc(doc(db,"products",editProdId), { 
+                title:document.getElementById('e-title').value, 
+                desc:document.getElementById('e-desc').value,
+                weightGram:Number(document.getElementById('e-weight').value), 
+                makingCharge:Number(document.getElementById('e-making').value),
+                currentPrice: pr ? Number(pr) : null
+            }); 
+            document.getElementById('edit-prod-modal').style.display='none'; 
+        };
+
+        // ORDERS
+        onSnapshot(query(collection(db,"orders"), orderBy("placedAt","desc")), s=>{
+            allOrders = []; // Store all fetched orders for search
+            s.forEach(d => allOrders.push({ id: d.id, ...d.data() }));
+            renderOrders(allOrders);
+        });
+        
+        function renderOrders(list) {
+            const pList = document.getElementById('pending-orders-list');
+            const cList = document.getElementById('confirmed-orders-list');
+            pList.innerHTML = '';
+            cList.innerHTML = '';
+
+            list.filter(o => o.status !== 'REJECTED' && o.status !== 'CANCELLED').forEach(o => {
+                let badgeColor = '#666';
+                if(o.status.includes('CONFIRMED')) badgeColor = '#2196f3';
+                if(o.status.includes('PACKED')) badgeColor = '#ff9800';
+                if(o.status.includes('SHIPPED')) badgeColor = '#ffc107';
+                if(o.status.includes('OUT FOR DELIVERY')) badgeColor = '#8bc34a'; // NEW STATUS
+                if(o.status.includes('DELIVERED')) badgeColor = '#4caf50';
+                
+                const html = `<div class="item-row" style="cursor:pointer;" onclick="openOrd('${o.id}')">
+                    <div><b style="color:var(--gold); font-size:1.1rem;">${o.orderId}</b><br><small>${o.customerName} • ₹${o.totalAmount.toLocaleString()}</small></div>
+                    <span class="status-badge" style="background:${badgeColor}; color:#fff;">${o.status}</span>
+                </div>`;
+                
+                if (o.status === 'Pending') {
+                    pList.innerHTML += html;
+                } else if (o.status !== 'ORDER DELIVERED') {
+                    cList.innerHTML += html;
+                }
+            });
+
+            if (pList.innerHTML === '') pList.innerHTML = '<p style="color:#666; padding:10px 0;">No new pending orders.</p>';
+            if (cList.innerHTML === '') cList.innerHTML = '<p style="color:#666; padding:10px 0;">No active confirmed orders.</p>';
+        }
+
+        window.searchOrders = () => { // Order ID Search
+            const q = document.getElementById('order-search').value.toLowerCase();
+            const filtered = allOrders.filter(o => o.orderId.toLowerCase().includes(q));
+            renderOrders(filtered);
+        };
+
+        // MODIFIED: openOrd to load fees
+        window.openOrd = async(id) => { 
+            currOrdId=id; const o=(await getDoc(doc(db,"orders",id))).data(); 
+            document.getElementById('m-oid').innerText = o.orderId;
             
-            s.forEach(d => {
-                const p = d.data();
-                el.innerHTML += `
-                    <div class="prod-item">
-                        <img src="${p.images[0]}" class="prod-img">
-                        <div class="prod-info">
-                            <div class="prod-title">${p.title}</div>
-                            <div class="prod-meta">₹${p.currentPrice} | ${p.weightGram}g</div>
-                            <div style="font-size:0.75rem; color:#666; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${p.description || ''}</div>
-                        </div>
-                        <button class="btn-del" onclick="delProd('${d.id}')"><i class="fas fa-trash"></i></button>
+            // Calculate Subtotal for display
+            const delivery = o.deliveryCharge || 0;
+            const platform = o.platformFee || 0;
+            const total = o.totalAmount || 0;
+            const subtotal = total - delivery - platform;
+
+            document.getElementById('m-details').innerHTML = `<b style="color:#fff">Client:</b> ${o.customerName}<br><b>Phone:</b> ${o.customerPhone}<br><b>Pincode:</b> ${o.customerPincode}<br><b>Address:</b> ${o.customerAddress}<br><hr style="border-color:#333; margin:10px 0;"><b>Items:</b><br>${o.items.map(i=>`<div>- ${i.title} (₹${i.p.toLocaleString()})</div>`).join('')}<div style="text-align:right; color:white; margin-top:10px; font-weight:bold;">Subtotal: ₹${subtotal.toLocaleString()}</div>`;
+            
+            // Load Fees
+            document.getElementById('m-delivery-fee').value = delivery;
+            document.getElementById('m-platform-fee').value = platform;
+
+            document.getElementById('m-status-sel').value = o.status; 
+            document.getElementById('m-note').value = o.trackingNote||''; 
+            document.getElementById('ord-modal').style.display='flex'; 
+        };
+
+        // MODIFIED: saveOrderUpdate to save fees and recalculate total
+        window.saveOrderUpdate = async() => { 
+            const status = document.getElementById('m-status-sel').value;
+            const note = document.getElementById('m-note').value;
+            const delivery = Number(document.getElementById('m-delivery-fee').value);
+            const platform = Number(document.getElementById('m-platform-fee').value);
+            
+            const oDoc = await getDoc(doc(db,"orders",currOrdId));
+            const o = oDoc.data();
+            
+            // Calculate Item Total (Subtotal)
+            let itemTotal = 0;
+            o.items.forEach(i => itemTotal += i.p);
+
+            // Calculate New Total
+            const newTotal = itemTotal + delivery + platform;
+
+            await updateDoc(doc(db,"orders",currOrdId), { 
+                status: status, 
+                trackingNote: note,
+                deliveryCharge: delivery,
+                platformFee: platform,
+                totalAmount: newTotal 
+            }); 
+            document.getElementById('ord-modal').style.display='none'; 
+            alert("Order Status and Fees Updated Instantly!");
+        };
+
+        // USERS
+        onSnapshot(collection(db,"users"), s=>{ users=[]; s.forEach(d=>users.push({id:d.id, ...d.data()})); renderUsers(users); });
+        function renderUsers(list) {
+            const l=document.getElementById('users-list'); l.innerHTML='';
+            list.forEach(u=>{ 
+                l.innerHTML+=`<div class="item-row">
+                    <span>${u.username} <small style="color:#888;">(${u.phone})</small></span>
+                    <div>
+                        <button class="btn" style="width:auto; padding:6px 12px; background:#2196f3; margin-right:5px; color:white; font-size:0.7rem;" onclick="viewUserOrders('${u.id}', '${u.username}')">VIEW ORDERS</button>
+                        <button class="btn" style="width:auto; padding:6px 12px; background:${u.isBlocked?'#4caf50':'#ff4444'}; color:white; font-size:0.7rem;" onclick="togBlock('${u.id}',${u.isBlocked})">${u.isBlocked?'UNBLOCK':'BLOCK'}</button>
                     </div>
-                `;
+                </div>`; 
             });
-        });
+        }
+        window.searchUsers = () => { const q=document.getElementById('user-search').value.toLowerCase(); renderUsers(users.filter(u=>u.username.toLowerCase().includes(q) || u.phone.includes(q))); };
+        window.togBlock = async(id, st) => { if(confirm("Change Status?")) await updateDoc(doc(db,"users",id), {isBlocked:!st}); };
 
-        window.delProd = async(id) => { if(confirm("Delete?")) deleteDoc(doc(db, "products", id)); }
+        // NEW: VIEW USER ORDERS
+        window.viewUserOrders = (uid, name) => {
+            document.getElementById('uom-title').innerText = `Orders for ${name}`;
+            const l = document.getElementById('uom-list');
+            l.innerHTML = 'Fetching orders...';
+            
+            onSnapshot(query(collection(db, "orders"), where("uid", "==", uid), orderBy("placedAt", "desc")), s => {
+                l.innerHTML = '';
+                if (s.empty) {
+                    l.innerHTML = '<p style="color:#666; text-align:center;">No orders found for this user.</p>';
+                    return;
+                }
+                s.forEach(oDoc => {
+                    const o = oDoc.data();
+                    let badgeColor = '#666';
+                    if(o.status.includes('CONFIRMED')) badgeColor = '#2196f3';
+                    if(o.status.includes('PACKED')) badgeColor = '#ff9800';
+                    if(o.status.includes('SHIPPED')) badgeColor = '#ffc107';
+                    if(o.status.includes('OUT FOR DELIVERY')) badgeColor = '#8bc34a'; 
+                    if(o.status.includes('DELIVERED')) badgeColor = '#4caf50';
+                    if(o.status.includes('REJECTED') || o.status.includes('CANCELLED')) badgeColor = '#f44336';
 
-        // 4. Orders
-        onSnapshot(query(collection(db, "orders"), orderBy("placedAt", "desc")), (s) => {
-            const oDiv = document.getElementById('orders-list');
-            oDiv.innerHTML = '';
-            s.forEach(d => {
-                const o = d.data();
-                oDiv.innerHTML += `
-                    <div class="prod-item" style="display:block; border-color:#333;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span style="color:var(--gold)">${o.customerName}</span>
-                            <span style="font-weight:bold;">₹${o.totalAmount}</span>
-                        </div>
-                        <div style="font-size:0.8rem; color:#888;">${o.items.length} Items • ${new Date(o.placedAt?.seconds*1000).toLocaleDateString()}</div>
-                    </div>
-                `;
+                    l.innerHTML += `<div class="item-row" onclick="openOrd('${oDoc.id}')" style="cursor:pointer;">
+                        <div><b style="color:var(--gold);">${o.orderId}</b><br><small>Total: ₹${o.totalAmount.toLocaleString()}</small></div>
+                        <span class="status-badge" style="background:${badgeColor}; color:#fff;">${o.status}</span>
+                    </div>`;
+                });
             });
-        });
 
+            document.getElementById('user-ord-modal').style.display = 'flex';
+        };
     </script>
 </body>
 </html>
