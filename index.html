@@ -3,563 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASC COMMAND | Admin Console</title>
+    <title>Admin | Billify</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg:#090909; --panel:#141414; --gold:#D4AF37; --text:#e0e0e0; --border:#333; }
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Roboto', sans-serif; }
-        body { background:var(--bg); color:var(--text); padding-bottom:80px; }
+        :root { --bg: #000; --panel: #09090b; --border: #27272a; --primary: #6366f1; --text: #f4f4f5; --success: #10b981; --danger: #ef4444; }
+        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
-        /* HEADER */
-        header { 
-            background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); 
-            padding:15px 25px; border-bottom:1px solid var(--border); 
-            position:sticky; top:0; z-index:100; 
-            display:flex; justify-content:space-between; align-items:center; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-        }
-        h1 { font-family:'Cinzel'; color:var(--gold); font-size:1.4rem; letter-spacing: 2px; }
+        .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
+        .nav { padding: 12px; margin-bottom: 5px; cursor: pointer; border-radius: 8px; color: #a1a1aa; font-weight: 500; display: flex; gap: 10px; align-items: center; }
+        .nav:hover, .nav.active { background: var(--primary); color: white; }
+
+        .main { flex: 1; padding: 30px; overflow-y: auto; }
+        .page { display: none; animation: fadeIn 0.3s ease; } .page.active { display: block; }
+        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+        .card { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; color: white; margin-left: 5px; font-weight: 600; transition: 0.2s; }
+        .btn-green { background: var(--success); } .btn-red { background: var(--danger); } .btn-blue { background: var(--primary); }
+        input, select, textarea { background: #000; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; width: 100%; margin-bottom: 10px; outline: none; }
         
-        /* LAYOUT */
-        .container { padding:25px; max-width:1000px; margin:0 auto; }
-        .section { display:none; animation:fadeIn 0.4s; }
-        .section.active { display:block; }
-        @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
-
-        /* CARDS */
-        .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:25px; margin-bottom:25px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        h3 { color:var(--gold); margin-bottom:20px; font-weight:500; font-family:'Cinzel'; border-bottom:1px solid #222; padding-bottom:10px; }
-
-        /* FORMS */
-        input, select, textarea { 
-            width:100%; background:#000; border:1px solid var(--border); 
-            padding:14px; color:#fff; border-radius:4px; margin-bottom:15px; outline:none; font-size:0.9rem; transition:0.3s;
-        }
-        input:focus { border-color:var(--gold); background:#0a0a0a; }
-
-        /* BUTTONS */
-        .btn { 
-            width:100%; padding:14px; background:linear-gradient(135deg, #bf953f, #aa771c); 
-            border:none; border-radius:4px; font-weight:bold; cursor:pointer; color:#000; 
-            text-transform:uppercase; letter-spacing:1px; font-size:0.9rem; transition:0.3s;
-        }
-        .btn:hover { filter: brightness(1.1); box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
-        
-        /* LIST ITEMS */
-        .item-row { 
-            display:flex; justify-content:space-between; align-items:center; 
-            background:#1a1a1a; padding:18px; margin-bottom:12px; 
-            border:1px solid #2a2a2a; border-radius:6px; transition:0.2s;
-        }
-        .item-row:hover { border-color:var(--gold); background:#202020; }
-        
-        /* NAV */
-        .bottom-nav { 
-            position:fixed; bottom:0; width:100%; background:#111; 
-            border-top:1px solid var(--border); display:flex; justify-content:space-around; 
-            padding:15px; z-index:200; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-        }
-        .nav-item { color:#666; font-size:0.75rem; text-align:center; cursor:pointer; flex:1; transition:0.3s; text-transform: uppercase; letter-spacing: 1px; }
-        .nav-item.active { color:var(--gold); transform: translateY(-2px); }
-        .nav-item i { font-size:1.3rem; display:block; margin-bottom:6px; }
-
-        /* MODAL */
-        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:none; justify-content:center; align-items:center; padding:20px; z-index:3000; backdrop-filter: blur(5px); }
-        .modal-box { background:#141414; width:100%; max-width:600px; padding:30px; border:1px solid var(--border); border-radius:8px; max-height:90vh; overflow-y:auto; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
-
-        /* STATUS BADGE */
-        .status-badge { padding:5px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; text-transform:uppercase; }
-
-        /* CHAT ADMIN */
-        .chat-list-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; transition: 0.2s; }
-        .chat-list-item:hover { background: #222; }
-        .chat-list-item.unread { border-left: 3px solid var(--gold); background: #1a1a1a; }
-        .chat-window { height: 400px; display: flex; flex-direction: column; }
-        .msg-list { flex-grow: 1; overflow-y: auto; background: #000; padding: 10px; border: 1px solid #333; margin-bottom: 10px; }
-        .admin-msg { text-align: right; margin: 5px; color: var(--gold); }
-        .user-msg { text-align: left; margin: 5px; color: #fff; }
-
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
+        .modal-box { background: var(--panel); width: 600px; padding: 25px; border-radius: 16px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+        .modal-sec { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border); }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
-    <header>
-        <h1>ASC COMMAND</h1>
-        <div style="text-align:right; font-size:0.8rem; color:#888;">
-            <div id="disp-gold" style="color:var(--gold);">Gold: ...</div>
-            <div id="disp-silver">Silver: ...</div>
-        </div>
-    </header>
 
-    <div class="container">
+    <div class="sidebar">
+        <h2 style="color:var(--primary); margin-top:0;">Billify Admin</h2>
+        <div class="nav active" onclick="tab('orders')">Orders</div>
+        <div class="nav" onclick="tab('renewals')">Renewals</div>
+        <div class="nav" onclick="tab('support')">Support</div>
+        <div class="nav" onclick="tab('users')">Users</div>
+        <div class="nav" onclick="tab('plans')">Plans</div>
+        <div class="nav" onclick="tab('designs')">Designs</div>
+        <div class="nav" onclick="tab('settings')">Settings</div>
+    </div>
+
+    <div class="main">
+        <div id="pg-orders" class="page active">
+            <h2>Orders</h2>
+            <input id="order-search" placeholder="Search User or Order ID..." onkeyup="filterOrders()">
+            <div id="order-list">Loading...</div>
+        </div>
         
-        <div id="tab-dash" class="section active">
-            <div class="card">
-                <h3><i class="fas fa-coins"></i> Update Live Rates</h3>
-                <div style="display:flex; gap:15px;">
-                    <div style="flex:1;">
-                        <label style="font-size:0.8rem; color:#888;">Gold (₹)</label>
-                        <input type="number" id="gold-rate-input">
-                    </div>
-                    <div style="flex:1;">
-                        <label style="font-size:0.8rem; color:#888;">Silver (₹)</label>
-                        <input type="number" id="silver-rate-input">
-                    </div>
-                </div>
-                <button class="btn" id="btn-rate">PUSH LIVE UPDATE (0.01s Sync)</button>
-            </div>
-            
-            <div class="card">
-                <h3><i class="fas fa-robot"></i> Auto-Reply Config</h3>
-                <input type="text" id="auto-keyword" placeholder="Trigger Keyword (Legacy)" style="display:none">
-                <textarea id="auto-message" placeholder="Automated First Reply Message for New Chats" rows="3" required></textarea>
-                <button class="btn" onclick="saveAutoMessage()" style="background:#555; color:#fff;">SAVE AUTO-REPLY</button>
-            </div>
+        <div id="pg-renewals" class="page"><h2>Renewals</h2><div id="renewal-list">Loading...</div></div>
 
-            <div class="card">
-                <h3><i class="fas fa-bullhorn"></i> Manage Promotions</h3>
-                <form id="add-ad-form">
-                    <input type="text" id="ad-title" placeholder="Ad Title" required>
-                    <input type="text" id="ad-image-url" placeholder="Image URL (Full Path)" required>
-                    <textarea id="ad-desc" placeholder="Ad Description (Optional)" rows="2"></textarea>
-                    <input type="url" id="ad-link" placeholder="Link/URL (Optional)">
-                    <button class="btn" style="background:#555; color:#fff;">PUBLISH AD</button>
-                </form>
-                <h4 style="color:#aaa; margin-top:20px; border-bottom:1px solid #333; padding-bottom:5px; font-size:0.9rem;">Live Ads</h4>
-                <div id="ads-list-m">Loading...</div>
-            </div>
+        <div id="pg-support" class="page"><h2>Support Inbox</h2><div id="support-list">Loading...</div></div>
+
+        <div id="pg-users" class="page">
+            <h2>User Manager</h2>
+            <input id="user-search" placeholder="Search..." onkeyup="searchUsers()">
+            <div id="user-list">Loading...</div>
         </div>
 
-        <div id="tab-products" class="section">
-            <div class="card">
-                <h3><i class="fas fa-plus"></i> Add Inventory</h3>
-                <form id="add-prod-form">
-                    <input type="text" id="p-title" placeholder="Product Title" required>
-                    <textarea id="p-desc" placeholder="Product Details & Description" rows="3"></textarea>
-                    <textarea id="p-imgs" placeholder="Image URLs (Comma separated)" rows="2" required></textarea>
-                    <div style="display:flex; gap:15px;">
-                        <input type="number" id="p-weight" placeholder="Weight (g)" step="0.01" required>
-                        <input type="number" id="p-making" placeholder="Making Charge (₹)" value="500">
-                    </div>
-                    <input type="number" id="p-price" placeholder="Fixed Price (Leave empty for auto-calc)" style="border-color:var(--gold);">
-                    <select id="p-cat"><option value="">Loading Categories...</option></select>
-                    <button class="btn">PUBLISH TO APP</button>
-                </form>
+        <div id="pg-plans" class="page">
+            <h2>Plans</h2>
+            <div class="card" style="display:block;">
+                <h4>Add Plan</h4>
+                <input id="pl-n" placeholder="Name">
+                <div style="display:flex; gap:10px;"><input id="pl-p" placeholder="Price"><input id="pl-d" placeholder="Days"></div>
+                <textarea id="pl-desc" placeholder="Desc" rows="2"></textarea>
+                <button class="btn btn-green" onclick="addPlan()">Add</button>
             </div>
+            <div id="plan-list"></div>
+        </div>
+
+        <div id="pg-designs" class="page">
+            <h2>Designs & Categories</h2>
             
-            <div class="card">
-                <h3><i class="fas fa-tags"></i> Categories</h3>
+            <div class="card" style="display:block; border-left:3px solid var(--primary);">
+                <h4 style="margin-top:0">1. Add Category</h4>
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="new-cat-name" placeholder="New Category Name">
-                    <button class="btn" style="width:auto;" onclick="addCategory()">ADD</button>
+                    <input id="cat-n" placeholder="Category Name (e.g. E-Commerce)">
+                    <input id="cat-img" placeholder="Cover Image URL">
                 </div>
-                <div id="cat-list-m" style="margin-top:15px;"></div>
+                <button class="btn btn-blue" onclick="addCategory()">Add Category</button>
             </div>
 
-            <h3 style="margin-top:30px;">Live Inventory</h3>
-            <div id="inventory-list">Loading...</div>
-        </div>
-
-        <div id="tab-orders" class="section">
-            <h3><i class="fas fa-box-open"></i> Recent Orders</h3>
-            <input type="text" id="order-search" placeholder="Search by Order ID (e.g. #ASC123456)..." oninput="searchOrders()">
-            
-            <h4 style="color:var(--gold); margin-top:20px; border-bottom:1px solid #333; padding-bottom:10px; font-size:1rem;">New / Pending Orders</h4>
-            <div id="pending-orders-list" style="margin-bottom:30px;">Loading...</div>
-
-            <h4 style="color:var(--gold); margin-top:20px; border-bottom:1px solid #333; padding-bottom:10px; font-size:1rem;">Confirmed / Active Orders</h4>
-            <div id="confirmed-orders-list">Loading...</div>
-        </div>
-
-        <div id="tab-users" class="section">
-            <h3><i class="fas fa-users"></i> User Database</h3>
-            <input type="text" id="user-search" placeholder="Search by Name or Phone..." oninput="searchUsers()">
-            <div id="users-list">Loading...</div>
-        </div>
-
-        <!-- NEW CHAT SECTION -->
-        <div id="tab-messages" class="section">
-            <h3><i class="fas fa-comments"></i> Customer Support Messages</h3>
-            <div id="chat-users-list" style="background:#111; border:1px solid #333; border-radius:4px;">
-                <p style="padding:15px; color:#666;">Loading active conversations...</p>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ADMIN CHAT MODAL -->
-    <div id="admin-chat-modal" class="modal">
-        <div class="modal-box">
-            <h3 id="chat-user-name">User Chat</h3>
-            <div class="chat-window">
-                <div id="admin-msg-list" class="msg-list"></div>
+            <div class="card" style="display:block; border-left:3px solid var(--success);">
+                <h4 style="margin-top:0">2. Add Theme</h4>
+                <select id="th-cat-sel"><option>Loading categories...</option></select>
+                <input id="th-n" placeholder="Theme Name">
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="admin-chat-in" placeholder="Type reply...">
-                    <button class="btn" style="width:auto;" onclick="sendAdminReply()">SEND</button>
+                    <input id="th-img" placeholder="Preview Image URL">
+                    <input id="th-url" placeholder="Demo URL">
                 </div>
+                <button class="btn btn-green" onclick="addTheme()">Add Theme</button>
             </div>
-            <button class="btn" style="background:#222; margin-top:10px; color:#fff;" onclick="closeAdminChat()">CLOSE</button>
-        </div>
-    </div>
 
-    <div id="edit-prod-modal" class="modal">
-        <div class="modal-box">
-            <h3>Edit Item</h3>
-            <label style="font-size:0.8rem; color:#888;">Title</label>
-            <input type="text" id="e-title">
-            <label style="font-size:0.8rem; color:#888;">Description</label>
-            <textarea id="e-desc" rows="4"></textarea>
-            <div style="display:flex; gap:10px;">
-                <div><label style="font-size:0.8rem; color:#888;">Weight (g)</label><input type="number" id="e-weight"></div>
-                <div><label style="font-size:0.8rem; color:#888;">Making (₹)</label><input type="number" id="e-making"></div>
-            </div>
-            <label style="font-size:0.8rem; color:#888;">Fixed Price (Override)</label>
-            <input type="number" id="e-price">
-            <button class="btn" onclick="saveProductEdit()">SAVE & SYNC INSTANTLY</button>
-            <button class="btn" style="background:#222; margin-top:10px; color:#fff;" onclick="document.getElementById('edit-prod-modal').style.display='none'">CANCEL</button>
-        </div>
-    </div>
-
-    <div id="ord-modal" class="modal">
-        <div class="modal-box">
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-                <h3 id="m-oid" style="margin:0;">Order #</h3>
-                <i class="fas fa-times" onclick="document.getElementById('ord-modal').style.display='none'" style="color:#fff; cursor:pointer;"></i>
-            </div>
-            <div id="m-details" style="background:#0a0a0a; padding:20px; border-radius:4px; margin-bottom:20px; font-size:0.9rem; color:#ccc; line-height:1.6; border:1px solid #333;"></div>
+            <h3 style="margin-top:30px;">All Categories</h3>
+            <div id="cat-list"></div>
             
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1;">
-                    <label style="color:var(--gold); font-size:0.8rem;">Delivery Charge (₹)</label>
-                    <input type="number" id="m-delivery-fee" placeholder="Delivery Charge">
-                </div>
-                <div style="flex:1;">
-                    <label style="color:var(--gold); font-size:0.8rem;">Platform Fee (₹)</label>
-                    <input type="number" id="m-platform-fee" placeholder="Platform Fee">
-                </div>
-            </div>
-
-            <label style="color:var(--gold);">Update Status</label>
-            <select id="m-status-sel">
-                <option value="Pending">Pending</option>
-                <option value="ORDER CONFIRMED">ORDER CONFIRMED</option>
-                <option value="ORDER PACKED">ORDER PACKED</option>
-                <option value="ORDER SHIPPED">ORDER SHIPPED</option>
-                <option value="OUT FOR DELIVERY">OUT FOR DELIVERY</option> <option value="ORDER DELIVERED">ORDER DELIVERED</option>
-                <option value="REJECTED">REJECTED</option>
-                <option value="CANCELLED">CANCELLED (User)</option>
-            </select>
-            <textarea id="m-note" rows="2" placeholder="Tracking ID / Admin Note..."></textarea>
-            <button class="btn" onclick="saveOrderUpdate()">UPDATE CLIENT STATUS</button>
+            <h3 style="margin-top:30px;">All Themes</h3>
+            <div id="theme-list"></div>
         </div>
+
+        <div id="pg-settings" class="page"><h2>Settings</h2><input id="set-qr" placeholder="QR URL"><input id="set-auto" placeholder="Free Trial URL"><button class="btn btn-green" onclick="saveSet()">Save</button></div>
     </div>
 
-    <div id="user-ord-modal" class="modal">
+    <div id="user-modal" class="modal">
         <div class="modal-box">
-            <h3 id="uom-title" style="border-bottom:none;"></h3>
-            <button class="btn" style="background:#222; margin-bottom:20px; color:#fff;" onclick="document.getElementById('user-ord-modal').style.display='none'">CLOSE</button>
-            <div id="uom-list"></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h2>Manage</h2><button class="btn btn-red" onclick="closeModal()">X</button></div>
+            <div id="m-profile" style="margin-bottom:15px; color:#9ca3af;"></div>
+            <div class="modal-sec"><h4>Gift Sub</h4><select id="gift-plan"></select><div style="display:flex; gap:10px;"><input id="gift-site" placeholder="Site"><input id="gift-url" placeholder="URL"></div><button class="btn btn-green" style="width:100%" onclick="giftSub()">Gift</button></div>
+            <div class="modal-sec"><h4>Websites</h4><div id="m-webs"></div></div>
         </div>
     </div>
 
-    <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('tab-dash', this)"><i class="fas fa-chart-line"></i>Dash</div>
-        <div class="nav-item" onclick="switchTab('tab-orders', this)"><i class="fas fa-box"></i>Orders</div>
-        <div class="nav-item" onclick="switchTab('tab-messages', this)"><i class="fas fa-comments"></i>Msgs</div>
-        <div class="nav-item" onclick="switchTab('tab-users', this)"><i class="fas fa-users"></i>Users</div>
-        <div class="nav-item" onclick="switchTab('tab-products', this)"><i class="fas fa-gem"></i>Stock</div>
-    </div>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyCX5qpT_ytgJjRk21-VWZ-Ndhbq0hhjXYo", authDomain: "fir-integration-61a1f.firebaseapp.com", databaseURL: "https://fir-integration-61a1f-default-rtdb.firebaseio.com", projectId: "fir-integration-61a1f", storageBucket: "fir-integration-61a1f.firebasestorage.app", messagingSenderId: "178334018866", appId: "1:178334018866:web:ef78bc307549639d0ebb2b" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let allUsers=[], currentUid=null;
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        function tab(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active')); document.getElementById('pg-'+id).classList.add('active'); }
 
-        const firebaseConfig = { apiKey: "AIzaSyCJTI3q7yLPjF_3Hg0MvRJEuTOt02xV7fs", authDomain: "invoice-maker-a31e6.firebaseapp.com", projectId: "invoice-maker-a31e6", storageBucket: "invoice-maker-a31e6.firebasestorage.app", messagingSenderId: "84503037388", appId: "1:84503037388:web:0e4d89f4347376581e0969" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        let currOrdId=null, editProdId=null, users=[], allOrders=[], currChatUid=null, chatUnsub=null;
-
-        window.switchTab = (id, el) => {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
-        };
-
-        // RATES
-        onSnapshot(doc(db,"rates","today"), s=>{ if(s.exists()){ document.getElementById('disp-gold').innerText=`Gold: ₹${s.data().gold}`; document.getElementById('disp-silver').innerText=`Silver: ₹${s.data().silver}`; }});
-        document.getElementById('btn-rate').onclick = async() => { await setDoc(doc(db,"rates","today"), { gold: Number(document.getElementById('gold-rate-input').value), silver: Number(document.getElementById('silver-rate-input').value) }, {merge:true}); alert("Prices synced to User App instantly."); };
-        
-        // AUTO-REPLY CONFIG
-        onSnapshot(doc(db,"config","auto-reply"), s=>{ 
+        // ORDERS (Shows Selected Theme)
+        db.ref('subscriptions').orderByChild('status').equalTo('pending').on('value',s=>{
+            const e=document.getElementById('order-list'); e.innerHTML='';
             if(s.exists()){
-                const data = s.data();
-                document.getElementById('auto-message').value = data.message || '';
-            } 
-        });
-        window.saveAutoMessage = async() => {
-            const message = document.getElementById('auto-message').value.trim();
-            if (!message) return alert("Message is required.");
-            await setDoc(doc(db,"config","auto-reply"), { message: message }, {merge:true});
-            alert("Auto-Reply Saved! Users will receive this message instantly when they start a new chat.");
-        };
-
-        // CHAT SYSTEM (ADMIN SIDE)
-        onSnapshot(query(collection(db, "chats"), orderBy("lastUpdated", "desc")), s => {
-            const l = document.getElementById('chat-users-list');
-            l.innerHTML = '';
-            if(s.empty) l.innerHTML = '<p style="padding:15px; color:#666;">No active conversations.</p>';
-            
-            s.forEach(docSnap => {
-                const c = docSnap.data();
-                const lastMsg = c.messages[c.messages.length-1]?.text || 'No messages';
-                const unreadClass = c.unreadAdmin ? 'unread' : '';
-                l.innerHTML += `
-                    <div class="chat-list-item ${unreadClass}" onclick="openChat('${docSnap.id}', '${c.userName}')">
-                        <div style="font-weight:bold; color:var(--gold);">${c.userName}</div>
-                        <div style="font-size:0.8rem; color:#aaa; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${lastMsg}</div>
-                    </div>
-                `;
-            });
-        });
-
-        window.openChat = (uid, name) => {
-            currChatUid = uid;
-            document.getElementById('chat-user-name').innerText = `Chat with ${name}`;
-            document.getElementById('admin-chat-modal').style.display = 'flex';
-            
-            // Mark as read
-            updateDoc(doc(db, "chats", uid), { unreadAdmin: false });
-
-            // Listen to messages
-            if(chatUnsub) chatUnsub();
-            chatUnsub = onSnapshot(doc(db, "chats", uid), (s) => {
-                const msgs = s.data().messages || [];
-                const list = document.getElementById('admin-msg-list');
-                list.innerHTML = '';
-                msgs.forEach(m => {
-                    const cls = m.sender === 'admin' ? 'admin-msg' : 'user-msg';
-                    list.innerHTML += `<div class="${cls}"><b>${m.sender}:</b> ${m.text}</div>`;
-                });
-                list.scrollTop = list.scrollHeight;
-            });
-        };
-
-        window.sendAdminReply = async() => {
-            const txt = document.getElementById('admin-chat-in').value.trim();
-            if(!txt || !currChatUid) return;
-            
-            await updateDoc(doc(db, "chats", currChatUid), {
-                messages: arrayUnion({ sender: 'admin', text: txt, time: Date.now() }),
-                lastUpdated: serverTimestamp(),
-                unreadUser: true // (Optional) Could trigger badge on user side
-            });
-            document.getElementById('admin-chat-in').value = '';
-        };
-
-        window.closeAdminChat = () => {
-            document.getElementById('admin-chat-modal').style.display='none';
-            if(chatUnsub) chatUnsub();
-        };
-
-
-        // AD MANAGEMENT
-        document.getElementById('add-ad-form').addEventListener('submit', async(e) => {
-            e.preventDefault();
-            await addDoc(collection(db, "ads"), {
-                title: document.getElementById('ad-title').value,
-                imageUrl: document.getElementById('ad-image-url').value,
-                description: document.getElementById('ad-desc').value,
-                link: document.getElementById('ad-link').value,
-                createdAt: serverTimestamp()
-            });
-            alert("Ad Published!"); e.target.reset();
-        });
-
-        onSnapshot(query(collection(db, "ads"), orderBy("createdAt", "desc")), s => {
-            const l = document.getElementById('ads-list-m'); l.innerHTML = '';
-            s.forEach(d => {
-                const ad = d.data();
-                l.innerHTML += `<div class="item-row"><span style="font-weight:bold; color:#fff;">${ad.title}</span><button class="btn" style="width:auto; padding:8px 15px; background:#f44336; color:white; font-size:0.75rem;" onclick="delAd('${d.id}')">DELETE</button></div>`;
-            });
-        });
-        window.delAd = async(id) => { if(confirm("Delete Ad?")) await deleteDoc(doc(db,"ads",id)); };
-
-        // CATEGORIES
-        onSnapshot(collection(db,"categories"), s=>{ 
-            const l=document.getElementById('p-cat'); const m=document.getElementById('cat-list-m'); l.innerHTML='<option value="">Select Category</option>'; m.innerHTML=''; 
-            s.forEach(d=>{ l.innerHTML+=`<option value="${d.data().slug}">${d.data().name}</option>`; m.innerHTML+=`<div style="color:#aaa; padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">${d.data().name} <span style="color:#ff4444; cursor:pointer; font-weight:bold;" onclick="delCat('${d.id}')">DELETE</span></div>`; }); 
-        });
-        window.addCategory = async() => { const n=document.getElementById('new-cat-name').value; if(n) await addDoc(collection(db,"categories"), {name:n, slug:n.toLowerCase().replace(/ /g,'-')}); document.getElementById('new-cat-name').value=''; };
-        window.delCat = async(id) => { if(confirm("Delete Category?")) await deleteDoc(doc(db,"categories",id)); };
-
-        // PRODUCTS
-        document.getElementById('add-prod-form').addEventListener('submit', async(e)=>{ 
-            e.preventDefault(); 
-            const imgs = document.getElementById('p-imgs').value.split(',').map(u=>u.trim()).filter(u=>u);
-            const pr = document.getElementById('p-price').value;
-            await addDoc(collection(db,"products"), { 
-                title:document.getElementById('p-title').value, 
-                desc:document.getElementById('p-desc').value,
-                images:imgs, 
-                category:document.getElementById('p-cat').value, 
-                weightGram:Number(document.getElementById('p-weight').value), 
-                makingCharge:Number(document.getElementById('p-making').value), 
-                currentPrice: pr ? Number(pr) : null,
-                rating:5, ratingCount:0, createdAt:serverTimestamp() 
-            }); 
-            alert("Product is LIVE!"); e.target.reset(); 
-        });
-
-        onSnapshot(collection(db,"products"), s=>{
-            const l=document.getElementById('inventory-list'); l.innerHTML='';
-            s.forEach(d=>{
-                const p=d.data();
-                l.innerHTML+=`<div class="item-row">
-                    <div><b style="color:white; font-size:1rem;">${p.title}</b><br><small style="color:#888;">${p.weightGram}g • MC: ₹${p.makingCharge}</small><div style="font-size:0.75rem; color:var(--gold); margin-top:4px;">★ ${p.rating?.toFixed(1)||5} (${p.ratingCount||0})</div></div>
-                    <div><button class="btn" style="width:auto; padding:8px 15px; background:#2196f3; margin-right:5px; color:white; font-size:0.75rem;" onclick="openEditProd('${d.id}')">EDIT</button><button class="btn" style="width:auto; padding:8px 15px; background:#f44336; color:white; font-size:0.75rem;" onclick="delP('${d.id}')">DEL</button></div>
-                </div>`;
-            });
-        });
-        window.delP = async(id) => { if(confirm("Delete Product permanently?")) await deleteDoc(doc(db,"products",id)); };
-        
-        window.openEditProd = async(id) => { 
-            editProdId=id; 
-            const p=(await getDoc(doc(db,"products",id))).data(); 
-            document.getElementById('e-title').value=p.title; 
-            document.getElementById('e-desc').value=p.desc||'';
-            document.getElementById('e-weight').value=p.weightGram; 
-            document.getElementById('e-making').value=p.makingCharge; 
-            document.getElementById('e-price').value=p.currentPrice||'';
-            document.getElementById('edit-prod-modal').style.display='flex'; 
-        };
-        window.saveProductEdit = async() => { 
-            const pr = document.getElementById('e-price').value;
-            await updateDoc(doc(db,"products",editProdId), { 
-                title:document.getElementById('e-title').value, 
-                desc:document.getElementById('e-desc').value,
-                weightGram:Number(document.getElementById('e-weight').value), 
-                makingCharge:Number(document.getElementById('e-making').value),
-                currentPrice: pr ? Number(pr) : null
-            }); 
-            document.getElementById('edit-prod-modal').style.display='none'; 
-        };
-
-        // ORDERS
-        onSnapshot(query(collection(db,"orders"), orderBy("placedAt","desc")), s=>{
-            allOrders = []; // Store all fetched orders for search
-            s.forEach(d => allOrders.push({ id: d.id, ...d.data() }));
-            renderOrders(allOrders);
-        });
-        
-        function renderOrders(list) {
-            const pList = document.getElementById('pending-orders-list');
-            const cList = document.getElementById('confirmed-orders-list');
-            pList.innerHTML = ''; cList.innerHTML = '';
-
-            list.filter(o => o.status !== 'REJECTED' && o.status !== 'CANCELLED').forEach(o => {
-                let badgeColor = '#666';
-                if(o.status.includes('CONFIRMED')) badgeColor = '#2196f3';
-                if(o.status.includes('PACKED')) badgeColor = '#ff9800';
-                if(o.status.includes('SHIPPED')) badgeColor = '#ffc107';
-                if(o.status.includes('OUT FOR DELIVERY')) badgeColor = '#8bc34a'; // NEW STATUS
-                if(o.status.includes('DELIVERED')) badgeColor = '#4caf50';
-                
-                const html = `<div class="item-row" style="cursor:pointer;" onclick="openOrd('${o.id}')">
-                    <div><b style="color:var(--gold); font-size:1.1rem;">${o.orderId}</b><br><small>${o.customerName} • ₹${o.totalAmount.toLocaleString()}</small></div>
-                    <span class="status-badge" style="background:${badgeColor}; color:#fff;">${o.status}</span>
-                </div>`;
-                
-                if (o.status === 'Pending') pList.innerHTML += html;
-                else if (o.status !== 'ORDER DELIVERED') cList.innerHTML += html;
-            });
-            if (pList.innerHTML === '') pList.innerHTML = '<p style="color:#666; padding:10px 0;">No new pending orders.</p>';
-            if (cList.innerHTML === '') cList.innerHTML = '<p style="color:#666; padding:10px 0;">No active confirmed orders.</p>';
-        }
-
-        window.searchOrders = () => { const q = document.getElementById('order-search').value.toLowerCase(); renderOrders(allOrders.filter(o => o.orderId.toLowerCase().includes(q))); };
-
-        window.openOrd = async(id) => { 
-            currOrdId=id; const o=(await getDoc(doc(db,"orders",id))).data(); 
-            document.getElementById('m-oid').innerText = o.orderId;
-            
-            const delivery = o.deliveryCharge || 0;
-            const platform = o.platformFee || 0;
-            const total = o.totalAmount || 0;
-            const subtotal = total - delivery - platform;
-
-            document.getElementById('m-details').innerHTML = `<b style="color:#fff">Client:</b> ${o.customerName}<br><b>Phone:</b> ${o.customerPhone}<br><b>Pincode:</b> ${o.customerPincode}<br><b>Address:</b> ${o.customerAddress}<br><hr style="border-color:#333; margin:10px 0;"><b>Items:</b><br>${o.items.map(i=>`<div>- ${i.title} (₹${i.p.toLocaleString()})</div>`).join('')}<div style="text-align:right; color:white; margin-top:10px; font-weight:bold;">Subtotal: ₹${subtotal.toLocaleString()}</div>`;
-            
-            document.getElementById('m-delivery-fee').value = delivery;
-            document.getElementById('m-platform-fee').value = platform;
-            document.getElementById('m-status-sel').value = o.status; 
-            document.getElementById('m-note').value = o.trackingNote||''; 
-            document.getElementById('ord-modal').style.display='flex'; 
-        };
-
-        window.saveOrderUpdate = async() => { 
-            const status = document.getElementById('m-status-sel').value;
-            const note = document.getElementById('m-note').value;
-            const delivery = Number(document.getElementById('m-delivery-fee').value);
-            const platform = Number(document.getElementById('m-platform-fee').value);
-            
-            const oDoc = await getDoc(doc(db,"orders",currOrdId));
-            const o = oDoc.data();
-            let itemTotal = 0; o.items.forEach(i => itemTotal += i.p);
-            const newTotal = itemTotal + delivery + platform;
-
-            await updateDoc(doc(db,"orders",currOrdId), { 
-                status: status, trackingNote: note,
-                deliveryCharge: delivery, platformFee: platform, totalAmount: newTotal 
-            }); 
-            document.getElementById('ord-modal').style.display='none'; 
-            alert("Order Status and Fees Updated Instantly!");
-        };
-
-        // USERS
-        onSnapshot(collection(db,"users"), s=>{ users=[]; s.forEach(d=>users.push({id:d.id, ...d.data()})); renderUsers(users); });
-        function renderUsers(list) {
-            const l=document.getElementById('users-list'); l.innerHTML='';
-            list.forEach(u=>{ 
-                l.innerHTML+=`<div class="item-row">
-                    <span>${u.username} <small style="color:#888;">(${u.phone})</small></span>
-                    <div>
-                        <button class="btn" style="width:auto; padding:6px 12px; background:#2196f3; margin-right:5px; color:white; font-size:0.7rem;" onclick="viewUserOrders('${u.id}', '${u.username}')">VIEW ORDERS</button>
-                        <button class="btn" style="width:auto; padding:6px 12px; background:${u.isBlocked?'#4caf50':'#ff4444'}; color:white; font-size:0.7rem;" onclick="togBlock('${u.id}',${u.isBlocked})">${u.isBlocked?'UNBLOCK':'BLOCK'}</button>
-                    </div>
-                </div>`; 
-            });
-        }
-        window.searchUsers = () => { const q=document.getElementById('user-search').value.toLowerCase(); renderUsers(users.filter(u=>u.username.toLowerCase().includes(q) || u.phone.includes(q))); };
-        window.togBlock = async(id, st) => { if(confirm("Change Status?")) await updateDoc(doc(db,"users",id), {isBlocked:!st}); };
-
-        window.viewUserOrders = (uid, name) => {
-            document.getElementById('uom-title').innerText = `Orders for ${name}`;
-            const l = document.getElementById('uom-list');
-            l.innerHTML = 'Fetching orders...';
-            
-            onSnapshot(query(collection(db, "orders"), where("uid", "==", uid), orderBy("placedAt", "desc")), s => {
-                l.innerHTML = '';
-                if (s.empty) { l.innerHTML = '<p style="color:#666; text-align:center;">No orders found for this user.</p>'; return; }
-                s.forEach(oDoc => {
-                    const o = oDoc.data();
-                    let badgeColor = '#666';
-                    if(o.status.includes('CONFIRMED')) badgeColor = '#2196f3';
-                    if(o.status.includes('PACKED')) badgeColor = '#ff9800';
-                    if(o.status.includes('SHIPPED')) badgeColor = '#ffc107';
-                    if(o.status.includes('OUT FOR DELIVERY')) badgeColor = '#8bc34a'; 
-                    if(o.status.includes('DELIVERED')) badgeColor = '#4caf50';
-                    if(o.status.includes('REJECTED') || o.status.includes('CANCELLED')) badgeColor = '#f44336';
-
-                    l.innerHTML += `<div class="item-row" onclick="openOrd('${oDoc.id}')" style="cursor:pointer;">
-                        <div><b style="color:var(--gold);">${o.orderId}</b><br><small>Total: ₹${o.totalAmount.toLocaleString()}</small></div>
-                        <span class="status-badge" style="background:${badgeColor}; color:#fff;">${o.status}</span>
+                s.forEach(c=>{
+                    const o=c.val();
+                    e.innerHTML+=`<div class="card order-card" data-search="${o.name.toLowerCase()} ${o.orderId?.toLowerCase()}">
+                        <div>
+                            <b style="color:var(--primary)">${o.orderId||'N/A'}</b><br>
+                            ${o.planName} (${o.price}) - ${o.name}<br>
+                            <span style="color:var(--success)">Theme: ${o.selectedDesign||'Standard'}</span><br>
+                            Txn: ${o.txnId}
+                        </div>
+                        <div><button class="btn btn-green" onclick="approve('${c.key}',${o.durationDays},'${o.uid}','${o.websiteName}')">Approve</button> <button class="btn btn-red" onclick="if(confirm('Reject?')) db.ref('subscriptions/'+c.key).remove()">Reject</button></div>
                     </div>`;
                 });
+            } else e.innerHTML='<p style="color:#666">No pending orders.</p>';
+        });
+        function filterOrders(){ const q=document.getElementById('order-search').value.toLowerCase(); document.querySelectorAll('.order-card').forEach(c=>c.style.display=c.dataset.search.includes(q)?'flex':'none'); }
+        function approve(k,d,uid,name){ const u=prompt("URL:"); if(u){ db.ref('subscriptions/'+k).update({status:'active',websiteUrl:u,expiryDate:Date.now()+(d*86400000)}); db.ref('websites').push({owner:uid,name:name,url:u,status:'live'}); } }
+
+        // DESIGNS (Categories & Themes)
+        function addCategory(){ db.ref('categories').push({name:document.getElementById('cat-n').value, image:document.getElementById('cat-img').value}); }
+        function addTheme(){ 
+            const cat = document.getElementById('th-cat-sel').value;
+            db.ref('themes').push({name:document.getElementById('th-n').value, image:document.getElementById('th-img').value, url:document.getElementById('th-url').value, categoryId:cat}); 
+        }
+        
+        // Load Cats for Dropdown & List
+        db.ref('categories').on('value',s=>{
+            const sel = document.getElementById('th-cat-sel');
+            const lst = document.getElementById('cat-list');
+            sel.innerHTML = ''; lst.innerHTML='';
+            if(s.exists()) s.forEach(c=>{
+                sel.innerHTML += `<option value="${c.key}">${c.val().name}</option>`;
+                lst.innerHTML += `<div class="card">${c.val().name} <img src="${c.val().image}" style="height:30px; border-radius:4px;"> <button class="btn btn-red" onclick="db.ref('categories/${c.key}').remove()">X</button></div>`;
             });
-            document.getElementById('user-ord-modal').style.display = 'flex';
-        };
+        });
+        
+        // Load Themes
+        db.ref('themes').on('value',s=>{
+            const lst = document.getElementById('theme-list'); lst.innerHTML='';
+            if(s.exists()) s.forEach(c=>{
+                lst.innerHTML += `<div class="card">${c.val().name} <a href="${c.val().url}" target="_blank">Link</a> <button class="btn btn-red" onclick="db.ref('themes/${c.key}').remove()">X</button></div>`;
+            });
+        });
+
+        // SUPPORT
+        db.ref('support_chats').limitToLast(50).on('value',s=>{
+            const e=document.getElementById('support-list'); e.innerHTML='';
+            const arr=[]; if(s.exists()) s.forEach(c=>arr.push(c.val()));
+            arr.reverse().forEach(m=>e.innerHTML+=`<div class="card" style="display:block"><div style="display:flex;justify-content:space-between"><b>@${m.username}</b> <small>${new Date(m.timestamp).toLocaleTimeString()}</small></div>${m.message}</div>`);
+        });
+
+        // USERS & PLANS
+        db.ref('users').on('value',s=>{allUsers=[]; s.forEach(c=>allUsers.push({key:c.key,...c.val()})); renderUsers(allUsers);});
+        function renderUsers(l){const e=document.getElementById('user-list');e.innerHTML='';l.forEach(u=>e.innerHTML+=`<div class="card"><div><b style="color:var(--primary)">@${u.key}</b><br>${u.profile?.name}<br>${u.profile?.mobile}</div><button class="btn btn-blue" onclick="openUser('${u.key}')">Manage</button></div>`);}
+        function searchUsers(){const q=document.getElementById('user-search').value.toLowerCase(); renderUsers(allUsers.filter(u=>(u.profile?.name||'').toLowerCase().includes(q)||u.key.includes(q)));}
+        async function openUser(uid){ currentUid=uid; document.getElementById('user-modal').style.display='flex'; const u=allUsers.find(x=>x.key===uid); document.getElementById('m-profile').innerHTML=`User: @${u.key}<br>Pass: ${u.password}`; const p=await db.ref('plans').get(); const sel=document.getElementById('gift-plan'); sel.innerHTML=''; if(p.exists())p.forEach(c=>sel.innerHTML+=`<option value="${c.val().name}|${c.val().days}">${c.val().name}</option>`); loadDetails(uid); }
+        function loadDetails(uid){ db.ref('websites').orderByChild('owner').equalTo(uid).on('value',s=>{const e=document.getElementById('m-webs');e.innerHTML='';if(s.exists())s.forEach(c=>e.innerHTML+=`<div style="background:#000;padding:5px;margin-bottom:5px;">${c.val().name} <button onclick="db.ref('websites/${c.key}').remove()">X</button></div>`)}); }
+        function giftSub(){const[n,d]=document.getElementById('gift-plan').value.split('|'); const s=document.getElementById('gift-site').value; if(s){db.ref('subscriptions').push({uid:currentUid,planName:n,websiteName:s,status:'active',expiryDate:Date.now()+(d*86400000)}); alert("Gifted");}}
+        function closeModal(){document.getElementById('user-modal').style.display='none';}
+
+        function addPlan(){ db.ref('plans').push({name:document.getElementById('pl-n').value,price:document.getElementById('pl-p').value,days:document.getElementById('pl-d').value,desc:document.getElementById('pl-desc').value}); }
+        db.ref('plans').on('value',s=>{const e=document.getElementById('plan-list');e.innerHTML='';if(s.exists())s.forEach(c=>e.innerHTML+=`<div class="card">${c.val().name} <button class="btn btn-red" onclick="db.ref('plans/${c.key}').remove()">X</button></div>`)});
+        function saveSet(){ db.ref('settings/qrCodeUrl').set(document.getElementById('set-qr').value); db.ref('settings/autoFreeUrl').set(document.getElementById('set-auto').value); alert("Saved"); }
+        db.ref('settings').on('value',s=>{if(s.val()){document.getElementById('set-qr').value=s.val().qrCodeUrl||'';document.getElementById('set-auto').value=s.val().autoFreeUrl||'';}});
+
+        // RENEWALS
+        db.ref('renewals').on('value',s=>{const e=document.getElementById('renewal-list');e.innerHTML='';if(s.exists())s.forEach(c=>{const r=c.val();e.innerHTML+=`<div class="card" style="display:block; border-left:3px solid #eab308"><b>RENEW: ${r.websiteName}</b><br>${r.name}<br><button class="btn btn-green" onclick="renew('${c.key}','${r.originalSubId}',${r.durationDays})">Extend</button> <button class="btn btn-red" onclick="db.ref('renewals/${c.key}').remove()">Reject</button></div>`})});
+        async function renew(k,sid,d){ if(confirm("Extend?")){ const sub=await db.ref('subscriptions/'+sid).get(); if(sub.exists()){ let base=Math.max(sub.val().expiryDate,Date.now()); await db.ref('subscriptions/'+sid).update({expiryDate:base+(d*86400000)}); await db.ref('renewals/'+k).remove(); alert("Done"); }}}
     </script>
 </body>
 </html>
-
