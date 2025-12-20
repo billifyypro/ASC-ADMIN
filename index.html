@@ -3,196 +3,621 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | Billify</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>ASC JEWELLERS • Admin Console</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #000; --panel: #09090b; --border: #27272a; --primary: #6366f1; --text: #f4f4f5; --success: #10b981; --danger: #ef4444; }
-        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        :root {
+            --primary: #111;
+            --gold: #D4AF37;
+            --bg: #f4f6f8;
+            --white: #fff;
+            --border: #e0e0e0;
+            --sidebar-w: 260px;
+        }
 
-        .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
-        .nav { padding: 12px; margin-bottom: 5px; cursor: pointer; border-radius: 8px; color: #a1a1aa; font-weight: 500; display: flex; gap: 10px; align-items: center; }
-        .nav:hover, .nav.active { background: var(--primary); color: white; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Lato', sans-serif; }
+        body { background: var(--bg); display: flex; height: 100vh; overflow: hidden; color: var(--primary); }
+        h1, h2, h3, .serif { font-family: 'Playfair Display', serif; }
 
-        .main { flex: 1; padding: 30px; overflow-y: auto; }
-        .page { display: none; animation: fadeIn 0.3s ease; } .page.active { display: block; }
-        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+        /* Sidebar */
+        aside { width: var(--sidebar-w); background: var(--primary); color: white; display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
+        .brand { font-size: 24px; padding: 30px; text-align: center; color: var(--gold); border-bottom: 1px solid #333; letter-spacing: 2px; }
+        .nav-links { padding: 20px 0; flex: 1; overflow-y: auto; }
+        .nav-item { padding: 15px 30px; cursor: pointer; color: #aaa; transition: 0.3s; display: flex; align-items: center; gap: 15px; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.05); color: var(--gold); border-left: 4px solid var(--gold); }
+        .nav-item i { width: 20px; text-align: center; }
 
-        .card { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; color: white; margin-left: 5px; font-weight: 600; transition: 0.2s; }
-        .btn-green { background: var(--success); } .btn-red { background: var(--danger); } .btn-blue { background: var(--primary); }
-        input, select, textarea { background: #000; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; width: 100%; margin-bottom: 10px; outline: none; }
+        /* Main Content */
+        main { flex: 1; overflow-y: auto; padding: 30px; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        .title { font-size: 2rem; }
+
+        /* Cards & Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: var(--white); border-radius: 8px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .stat-val { font-size: 2rem; font-weight: bold; margin-top: 10px; color: var(--primary); }
+        .stat-label { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Rate Management */
+        .rate-card { background: var(--primary); color: white; }
+        .rate-input-group { display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
+        .rate-input { background: rgba(255,255,255,0.1); border: 1px solid #444; color: white; padding: 10px; border-radius: 4px; flex: 1; min-width: 120px; outline: none; }
+        .rate-input:focus { border-color: var(--gold); }
+        .btn-gold { background: var(--gold); color: black; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+
+        /* Tables */
+        .table-wrap { background: var(--white); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #f9fafb; font-weight: 600; color: #555; }
+        td img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
         
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
-        .modal-box { background: var(--panel); width: 600px; padding: 25px; border-radius: 16px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
-        .modal-sec { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border); }
+        /* Buttons */
+        .btn-action { padding: 6px 10px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.9rem; margin-right: 5px; }
+        .btn-edit { background: #e3f2fd; color: #1976d2; }
+        .btn-del { background: #ffebee; color: #d32f2f; }
+        .btn-add { background: var(--primary); color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; border: none; }
+
+        /* Modal */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; width: 90%; max-width: 500px; padding: 30px; border-radius: 8px; max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
+        .row { display: flex; gap: 15px; }
+        
+        /* Status Badges */
+        .badge { padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; display: inline-block; min-width: 80px; text-align: center; }
+        .st-Pending { background: #fff3cd; color: #856404; }
+        .st-Confirmed { background: #d4edda; color: #155724; }
+        .st-Packed { background: #d1ecf1; color: #0c5460; }
+        .st-Shipped { background: #cce5ff; color: #004085; }
+        .st-Delivered { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .st-Cancelled { background: #f8d7da; color: #721c24; }
+
+        /* Settings & Coupons */
+        .settings-section { margin-bottom: 30px; padding-bottom: 30px; border-bottom: 1px solid var(--border); }
+        .coupon-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .coupon-tag { background: #f0f0f0; border: 1px solid #ddd; padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 10px; }
+        .coupon-tag i { cursor: pointer; color: #d32f2f; }
+
+        /* Toast */
+        #toast { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: var(--gold); padding: 15px 25px; border-radius: 4px; opacity: 0; transition: 0.3s; pointer-events: none; }
+        #toast.show { opacity: 1; bottom: 50px; }
+
+        .hidden { display: none; }
+        .mobile-menu-btn { display: none; font-size: 24px; cursor: pointer; padding: 10px; }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; overflow: auto; }
+            aside { width: 100%; height: auto; display: none; }
+            aside.active { display: block; }
+            .mobile-menu-btn { display: block; }
+            .nav-links { display: flex; flex-direction: column; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .row { flex-direction: column; gap: 0; }
+        }
     </style>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h2 style="color:var(--primary); margin-top:0;">Billify Admin</h2>
-        <div class="nav active" onclick="tab('orders')">Orders</div>
-        <div class="nav" onclick="tab('renewals')">Renewals</div>
-        <div class="nav" onclick="tab('support')">Support</div>
-        <div class="nav" onclick="tab('users')">Users</div>
-        <div class="nav" onclick="tab('plans')">Plans</div>
-        <div class="nav" onclick="tab('designs')">Designs</div>
-        <div class="nav" onclick="tab('settings')">Settings</div>
-    </div>
-
-    <div class="main">
-        <div id="pg-orders" class="page active">
-            <h2>Orders</h2>
-            <input id="order-search" placeholder="Search User or Order ID..." onkeyup="filterOrders()">
-            <div id="order-list">Loading...</div>
-        </div>
-        
-        <div id="pg-renewals" class="page"><h2>Renewals</h2><div id="renewal-list">Loading...</div></div>
-
-        <div id="pg-support" class="page"><h2>Support Inbox</h2><div id="support-list">Loading...</div></div>
-
-        <div id="pg-users" class="page">
-            <h2>User Manager</h2>
-            <input id="user-search" placeholder="Search..." onkeyup="searchUsers()">
-            <div id="user-list">Loading...</div>
-        </div>
-
-        <div id="pg-plans" class="page">
-            <h2>Plans</h2>
-            <div class="card" style="display:block;">
-                <h4>Add Plan</h4>
-                <input id="pl-n" placeholder="Name">
-                <div style="display:flex; gap:10px;"><input id="pl-p" placeholder="Price"><input id="pl-d" placeholder="Days"></div>
-                <textarea id="pl-desc" placeholder="Desc" rows="2"></textarea>
-                <button class="btn btn-green" onclick="addPlan()">Add</button>
+    <aside id="sidebar">
+        <div class="brand serif">ASC ADMIN</div>
+        <div class="nav-links">
+            <div class="nav-item active" onclick="switchView('dash')">
+                <i class="fas fa-chart-pie"></i> Dashboard
             </div>
-            <div id="plan-list"></div>
+            <div class="nav-item" onclick="switchView('products')">
+                <i class="fas fa-gem"></i> Products
+            </div>
+            <div class="nav-item" onclick="switchView('categories')">
+                <i class="fas fa-tags"></i> Categories
+            </div>
+            <div class="nav-item" onclick="switchView('orders')">
+                <i class="fas fa-shopping-basket"></i> Orders
+            </div>
+            <div class="nav-item" onclick="switchView('users')">
+                <i class="fas fa-users"></i> Users
+            </div>
+            <div class="nav-item" onclick="switchView('settings')">
+                <i class="fas fa-cogs"></i> Settings
+            </div>
+        </div>
+    </aside>
+
+    <main>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <i class="fas fa-bars mobile-menu-btn" onclick="toggleSidebar()"></i>
         </div>
 
-        <div id="pg-designs" class="page">
-            <h2>Designs & Categories</h2>
-            
-            <div class="card" style="display:block; border-left:3px solid var(--primary);">
-                <h4 style="margin-top:0">1. Add Category</h4>
-                <div style="display:flex; gap:10px;">
-                    <input id="cat-n" placeholder="Category Name (e.g. E-Commerce)">
-                    <input id="cat-img" placeholder="Cover Image URL">
+        <div id="view-dash">
+            <div class="header">
+                <h2 class="title serif">Dashboard Overview</h2>
+            </div>
+
+            <div class="stats-grid">
+                <div class="card rate-card" style="grid-column: 1 / -1;">
+                    <div class="stat-label" style="color:var(--gold);">Live Rates (INR / gram)</div>
+                    <div class="rate-input-group">
+                        <input type="number" id="rate-gold" class="rate-input" placeholder="Gold Rate">
+                        <input type="number" id="rate-silver" class="rate-input" placeholder="Silver Rate">
+                        <button class="btn-gold" onclick="updateRates()">UPDATE</button>
+                    </div>
                 </div>
-                <button class="btn btn-blue" onclick="addCategory()">Add Category</button>
-            </div>
-
-            <div class="card" style="display:block; border-left:3px solid var(--success);">
-                <h4 style="margin-top:0">2. Add Theme</h4>
-                <select id="th-cat-sel"><option>Loading categories...</option></select>
-                <input id="th-n" placeholder="Theme Name">
-                <div style="display:flex; gap:10px;">
-                    <input id="th-img" placeholder="Preview Image URL">
-                    <input id="th-url" placeholder="Demo URL">
+                <div class="card">
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-val" id="st-rev">₹0</div>
                 </div>
-                <button class="btn btn-green" onclick="addTheme()">Add Theme</button>
+                <div class="card">
+                    <div class="stat-label">Total Orders</div>
+                    <div class="stat-val" id="st-ord">0</div>
+                </div>
             </div>
 
-            <h3 style="margin-top:30px;">All Categories</h3>
-            <div id="cat-list"></div>
-            
-            <h3 style="margin-top:30px;">All Themes</h3>
-            <div id="theme-list"></div>
+            <div class="card">
+                <h3 class="serif" style="margin-bottom: 20px;">Recent Orders</h3>
+                <div class="table-wrap">
+                    <table id="dash-orders-table">
+                        <thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-        <div id="pg-settings" class="page"><h2>Settings</h2><input id="set-qr" placeholder="QR URL"><input id="set-auto" placeholder="Free Trial URL"><button class="btn btn-green" onclick="saveSet()">Save</button></div>
-    </div>
+        <div id="view-products" class="hidden">
+            <div class="header">
+                <h2 class="title serif">Product Management</h2>
+                <button class="btn-add" onclick="openProductModal()">+ Add Product</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Img</th><th>Name</th><th>Cat</th><th>Metal</th><th>Wt</th><th>Mk Chg</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="products-table"></tbody>
+                </table>
+            </div>
+        </div>
 
-    <div id="user-modal" class="modal">
-        <div class="modal-box">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h2>Manage</h2><button class="btn btn-red" onclick="closeModal()">X</button></div>
-            <div id="m-profile" style="margin-bottom:15px; color:#9ca3af;"></div>
-            <div class="modal-sec"><h4>Gift Sub</h4><select id="gift-plan"></select><div style="display:flex; gap:10px;"><input id="gift-site" placeholder="Site"><input id="gift-url" placeholder="URL"></div><button class="btn btn-green" style="width:100%" onclick="giftSub()">Gift</button></div>
-            <div class="modal-sec"><h4>Websites</h4><div id="m-webs"></div></div>
+        <div id="view-categories" class="hidden">
+            <div class="header">
+                <h2 class="title serif">Categories</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+                <div class="card">
+                    <h3 class="serif" style="margin-bottom: 15px;">Add Category</h3>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="new-cat-name" class="form-control" placeholder="Category Name">
+                        <button class="btn-add" onclick="addCategory()">Add</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="serif" style="margin-bottom: 15px;">Existing Categories</h3>
+                    <div id="cat-list" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-orders" class="hidden">
+            <div class="header">
+                <h2 class="title serif">All Orders</h2>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Details</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-users" class="hidden">
+            <div class="header">
+                <h2 class="title serif">Registered Users</h2>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Joined</th>
+                            <th>Saved Address</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-settings" class="hidden">
+            <div class="header">
+                <h2 class="title serif">Settings & Coupons</h2>
+            </div>
+
+            <div class="card settings-section">
+                <h3 class="serif" style="margin-bottom:15px;">Delivery Charges</h3>
+                <div class="row" style="align-items: flex-end;">
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Global Delivery Charge (₹)</label>
+                        <input type="number" id="setting-delivery" class="form-control" placeholder="0">
+                    </div>
+                    <button class="btn-add" onclick="saveDeliveryCharge()" style="height:42px; margin-bottom:15px;">Save Charge</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="serif" style="margin-bottom:15px;">Discount Coupons</h3>
+                <div class="row">
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Code</label>
+                        <input type="text" id="cp-code" class="form-control" placeholder="e.g. SAVE10">
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Type</label>
+                        <select id="cp-type" class="form-control">
+                            <option value="flat">Flat Amount (₹)</option>
+                            <option value="percent">Percentage (%)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Value</label>
+                        <input type="number" id="cp-value" class="form-control" placeholder="100 or 10">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Min Order (₹)</label>
+                        <input type="number" id="cp-min" class="form-control" placeholder="0">
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Expiry Date</label>
+                        <input type="date" id="cp-expiry" class="form-control">
+                    </div>
+                    <button class="btn-add" onclick="addCoupon()" style="height:42px; margin-top:22px;">Create Coupon</button>
+                </div>
+
+                <div class="coupon-list" id="active-coupons">
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h3 class="serif" id="modal-title">Add Product</h3>
+                <i class="fas fa-times" onclick="closeModal('product-modal')" style="cursor:pointer;"></i>
+            </div>
+            <form onsubmit="saveProduct(event)">
+                <input type="hidden" id="p-id">
+                <div class="form-group">
+                    <label class="form-label">Product Name</label>
+                    <input type="text" id="p-name" class="form-control" required>
+                </div>
+                <div class="row">
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Category</label>
+                        <select id="p-cat" class="form-control"></select>
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Metal</label>
+                        <select id="p-metal" class="form-control">
+                            <option value="gold">Gold</option>
+                            <option value="silver">Silver</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Weight (grams)</label>
+                        <input type="number" step="0.01" id="p-weight" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Making Charge (₹)</label>
+                        <input type="number" id="p-making" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Image URL</label>
+                    <input type="url" id="p-img" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea id="p-desc" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn-add" style="width:100%;">Save Product</button>
+            </form>
         </div>
     </div>
+
+    <div id="toast">Action Successful</div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyCX5qpT_ytgJjRk21-VWZ-Ndhbq0hhjXYo", authDomain: "fir-integration-61a1f.firebaseapp.com", databaseURL: "https://fir-integration-61a1f-default-rtdb.firebaseio.com", projectId: "fir-integration-61a1f", storageBucket: "fir-integration-61a1f.firebasestorage.app", messagingSenderId: "178334018866", appId: "1:178334018866:web:ef78bc307549639d0ebb2b" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJTI3q7yLPjF_3Hg0MvRJEuTOt02xV7fs",
+            authDomain: "invoice-maker-a31e6.firebaseapp.com",
+            databaseURL: "https://invoice-maker-a31e6-default-rtdb.firebaseio.com",
+            projectId: "invoice-maker-a31e6",
+            storageBucket: "invoice-maker-a31e6.firebasestorage.app",
+            messagingSenderId: "84503037388",
+            appId: "1:84503037388:web:0e4d89f4347376581e0969"
+        };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        let allUsers=[], currentUid=null;
+        const db = firebase.firestore();
 
-        function tab(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active')); document.getElementById('pg-'+id).classList.add('active'); }
+        let products = [];
+        let categories = [];
+        let orders = [];
 
-        // ORDERS (Shows Selected Theme)
-        db.ref('subscriptions').orderByChild('status').equalTo('pending').on('value',s=>{
-            const e=document.getElementById('order-list'); e.innerHTML='';
-            if(s.exists()){
-                s.forEach(c=>{
-                    const o=c.val();
-                    e.innerHTML+=`<div class="card order-card" data-search="${o.name.toLowerCase()} ${o.orderId?.toLowerCase()}">
-                        <div>
-                            <b style="color:var(--primary)">${o.orderId||'N/A'}</b><br>
-                            ${o.planName} (${o.price}) - ${o.name}<br>
-                            <span style="color:var(--success)">Theme: ${o.selectedDesign||'Standard'}</span><br>
-                            Txn: ${o.txnId}
-                        </div>
-                        <div><button class="btn btn-green" onclick="approve('${c.key}',${o.durationDays},'${o.uid}','${o.websiteName}')">Approve</button> <button class="btn btn-red" onclick="if(confirm('Reject?')) db.ref('subscriptions/'+c.key).remove()">Reject</button></div>
-                    </div>`;
-                });
-            } else e.innerHTML='<p style="color:#666">No pending orders.</p>';
+        // INIT
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchRates();
+            fetchProducts();
+            fetchCategories();
+            fetchOrders();
+            fetchUsers();
+            fetchSettings();
         });
-        function filterOrders(){ const q=document.getElementById('order-search').value.toLowerCase(); document.querySelectorAll('.order-card').forEach(c=>c.style.display=c.dataset.search.includes(q)?'flex':'none'); }
-        function approve(k,d,uid,name){ const u=prompt("URL:"); if(u){ db.ref('subscriptions/'+k).update({status:'active',websiteUrl:u,expiryDate:Date.now()+(d*86400000)}); db.ref('websites').push({owner:uid,name:name,url:u,status:'live'}); } }
 
-        // DESIGNS (Categories & Themes)
-        function addCategory(){ db.ref('categories').push({name:document.getElementById('cat-n').value, image:document.getElementById('cat-img').value}); }
-        function addTheme(){ 
-            const cat = document.getElementById('th-cat-sel').value;
-            db.ref('themes').push({name:document.getElementById('th-n').value, image:document.getElementById('th-img').value, url:document.getElementById('th-url').value, categoryId:cat}); 
+        // --- SIDEBAR ---
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // --- RATES ---
+        function fetchRates() {
+            db.collection('rates').doc('current').onSnapshot(doc => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('rate-gold').value = data.gold;
+                    document.getElementById('rate-silver').value = data.silver;
+                }
+            });
+        }
+        async function updateRates() {
+            const gold = parseFloat(document.getElementById('rate-gold').value);
+            const silver = parseFloat(document.getElementById('rate-silver').value);
+            await db.collection('rates').doc('current').set({ gold, silver }, { merge: true });
+            showToast('Rates Updated');
+        }
+
+        // --- CATEGORIES ---
+        function fetchCategories() {
+            db.collection('categories').onSnapshot(snap => {
+                categories = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                document.getElementById('cat-list').innerHTML = categories.map(c => 
+                    `<span class="coupon-tag">${c.name} <i class="fas fa-times" onclick="deleteCategory('${c.id}')"></i></span>`
+                ).join('');
+                document.getElementById('p-cat').innerHTML = categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            });
+        }
+        async function addCategory() {
+            const name = document.getElementById('new-cat-name').value;
+            if(!name) return;
+            await db.collection('categories').add({ name });
+            document.getElementById('new-cat-name').value = '';
+            showToast('Category Added');
+        }
+        async function deleteCategory(id) {
+            if(confirm("Delete category?")) await db.collection('categories').doc(id).delete();
+        }
+
+        // --- PRODUCTS ---
+        function fetchProducts() {
+            db.collection('products').onSnapshot(snap => {
+                products = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderProductTable();
+            });
+        }
+        function renderProductTable() {
+            document.getElementById('products-table').innerHTML = products.map(p => `
+                <tr>
+                    <td><img src="${p.image}"></td>
+                    <td><b>${p.name}</b></td>
+                    <td>${p.category}</td>
+                    <td>${p.metal}</td>
+                    <td>${p.weight}g</td>
+                    <td>₹${p.makingCharge}</td>
+                    <td>
+                        <button class="btn-action btn-edit" onclick="openProductModal('${p.id}')"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-del" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        function openProductModal(id = null) {
+            const modal = document.getElementById('product-modal');
+            const title = document.getElementById('modal-title');
+            document.querySelector('form').reset();
+            if(id) {
+                const p = products.find(x => x.id === id);
+                document.getElementById('p-id').value = p.id;
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-cat').value = p.category;
+                document.getElementById('p-metal').value = p.metal;
+                document.getElementById('p-weight').value = p.weight;
+                document.getElementById('p-making').value = p.makingCharge;
+                document.getElementById('p-img').value = p.image;
+                document.getElementById('p-desc').value = p.description || '';
+                title.innerText = "Edit Product";
+            } else {
+                document.getElementById('p-id').value = '';
+                title.innerText = "Add Product";
+            }
+            modal.classList.add('active');
+        }
+        async function saveProduct(e) {
+            e.preventDefault();
+            const id = document.getElementById('p-id').value;
+            const data = {
+                name: document.getElementById('p-name').value,
+                category: document.getElementById('p-cat').value,
+                metal: document.getElementById('p-metal').value,
+                weight: parseFloat(document.getElementById('p-weight').value),
+                makingCharge: parseFloat(document.getElementById('p-making').value),
+                image: document.getElementById('p-img').value,
+                description: document.getElementById('p-desc').value,
+                updatedAt: new Date()
+            };
+            if(id) await db.collection('products').doc(id).update(data);
+            else await db.collection('products').add(data);
+            closeModal('product-modal');
+            showToast('Product Saved');
+        }
+        async function deleteProduct(id) {
+            if(confirm("Delete product?")) await db.collection('products').doc(id).delete();
+        }
+
+        // --- ORDERS ---
+        function fetchOrders() {
+            db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                orders = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderOrders();
+                updateStats();
+            });
+        }
+        function renderOrders() {
+            const getRow = (o) => `
+                <tr>
+                    <td>#${o.id.slice(0,6).toUpperCase()}</td>
+                    <td>${o.createdAt ? o.createdAt.toDate().toLocaleDateString() : '-'}</td>
+                    <td>${o.customerDetails?.name || o.userName}<br><span style="font-size:0.8rem; color:#888;">${o.customerDetails?.phone || o.userPhone}</span></td>
+                    <td>
+                        <div style="font-size:0.9rem">Sub: ₹${o.subtotal?.toFixed(2) || 0}</div>
+                        <div style="font-size:0.9rem">Del: +₹${o.deliveryCharge || 0}</div>
+                        ${o.discount ? `<div style="font-size:0.9rem; color:green;">Disc: -₹${o.discount.toFixed(2)}</div>` : ''}
+                        <div style="font-weight:bold;">Total: ₹${o.total.toFixed(2)}</div>
+                    </td>
+                    <td><span class="badge st-${o.status}">${o.status}</span></td>
+                    <td>
+                        <select onchange="updateStatus('${o.id}', this.value)" style="padding:5px; border-radius:4px;">
+                            <option value="">Update...</option>
+                            <option value="Confirmed" ${o.status==='Confirmed'?'selected':''}>Confirm</option>
+                            <option value="Packed" ${o.status==='Packed'?'selected':''}>Pack</option>
+                            <option value="Shipped" ${o.status==='Shipped'?'selected':''}>Ship</option>
+                            <option value="Delivered" ${o.status==='Delivered'?'selected':''}>Deliver</option>
+                            <option value="Cancelled" ${o.status==='Cancelled'?'selected':''}>Cancel</option>
+                        </select>
+                    </td>
+                </tr>`;
+
+            document.getElementById('orders-table').innerHTML = orders.map(getRow).join('');
+            document.getElementById('dash-orders-table').querySelector('tbody').innerHTML = orders.slice(0,5).map(o => `
+                <tr>
+                    <td>#${o.id.slice(0,6).toUpperCase()}</td>
+                    <td>${o.customerDetails?.name || 'User'}</td>
+                    <td>₹${o.total.toFixed(2)}</td>
+                    <td><span class="badge st-${o.status}">${o.status}</span></td>
+                </tr>
+            `).join('');
+        }
+        async function updateStatus(oid, status) {
+            if(!status) return;
+            await db.collection('orders').doc(oid).update({ status });
+            showToast(`Status updated to ${status}`);
+        }
+        function updateStats() {
+            const revenue = orders.filter(o=>o.status!=='Cancelled').reduce((acc, o) => acc + (o.total || 0), 0);
+            document.getElementById('st-rev').innerText = '₹' + revenue.toLocaleString('en-IN');
+            document.getElementById('st-ord').innerText = orders.length;
+        }
+
+        // --- USERS ---
+        function fetchUsers() {
+            db.collection('users').onSnapshot(snap => {
+                const users = snap.docs.map(d => d.data());
+                document.getElementById('users-table').innerHTML = users.map(u => `
+                    <tr>
+                        <td>${u.name || '-'}</td>
+                        <td>${u.email}</td>
+                        <td>${u.phone || '-'}</td>
+                        <td>${u.createdAt ? u.createdAt.toDate().toLocaleDateString() : '-'}</td>
+                        <td>
+                            ${u.deliveryDetails ? 
+                            `<div style="font-size:0.8rem;">${u.deliveryDetails.address}, ${u.deliveryDetails.pincode}</div>` 
+                            : '<span style="color:#aaa">No saved address</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+            });
+        }
+
+        // --- SETTINGS & COUPONS ---
+        function fetchSettings() {
+            // Delivery Charge
+            db.collection('config').doc('store').onSnapshot(doc => {
+                if(doc.exists) document.getElementById('setting-delivery').value = doc.data().deliveryCharge || 0;
+            });
+
+            // Coupons
+            db.collection('coupons').onSnapshot(snap => {
+                const coupons = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                document.getElementById('active-coupons').innerHTML = coupons.map(c => `
+                    <span class="coupon-tag">
+                        <b>${c.code}</b> 
+                        <span style="font-size:0.8rem">(${c.type === 'percent' ? c.value + '%' : '₹' + c.value} off)</span>
+                        <i class="fas fa-times" onclick="deleteCoupon('${c.id}')"></i>
+                    </span>
+                `).join('');
+            });
         }
         
-        // Load Cats for Dropdown & List
-        db.ref('categories').on('value',s=>{
-            const sel = document.getElementById('th-cat-sel');
-            const lst = document.getElementById('cat-list');
-            sel.innerHTML = ''; lst.innerHTML='';
-            if(s.exists()) s.forEach(c=>{
-                sel.innerHTML += `<option value="${c.key}">${c.val().name}</option>`;
-                lst.innerHTML += `<div class="card">${c.val().name} <img src="${c.val().image}" style="height:30px; border-radius:4px;"> <button class="btn btn-red" onclick="db.ref('categories/${c.key}').remove()">X</button></div>`;
+        async function saveDeliveryCharge() {
+            const val = parseFloat(document.getElementById('setting-delivery').value) || 0;
+            await db.collection('config').doc('store').set({ deliveryCharge: val }, { merge: true });
+            showToast('Delivery Charge Saved');
+        }
+
+        async function addCoupon() {
+            const code = document.getElementById('cp-code').value.toUpperCase().trim();
+            const type = document.getElementById('cp-type').value;
+            const value = parseFloat(document.getElementById('cp-value').value);
+            const minOrder = parseFloat(document.getElementById('cp-min').value) || 0;
+            const expiry = document.getElementById('cp-expiry').value;
+
+            if(!code || !value || !expiry) return showToast('Please fill all fields');
+
+            await db.collection('coupons').add({ code, type, value, minOrder, expiry });
+            document.getElementById('cp-code').value = '';
+            showToast('Coupon Created');
+        }
+
+        async function deleteCoupon(id) {
+            if(confirm('Delete this coupon?')) await db.collection('coupons').doc(id).delete();
+        }
+
+        // --- UTILS ---
+        function switchView(view) {
+            ['dash', 'products', 'categories', 'orders', 'users', 'settings'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
             });
-        });
-        
-        // Load Themes
-        db.ref('themes').on('value',s=>{
-            const lst = document.getElementById('theme-list'); lst.innerHTML='';
-            if(s.exists()) s.forEach(c=>{
-                lst.innerHTML += `<div class="card">${c.val().name} <a href="${c.val().url}" target="_blank">Link</a> <button class="btn btn-red" onclick="db.ref('themes/${c.key}').remove()">X</button></div>`;
-            });
-        });
-
-        // SUPPORT
-        db.ref('support_chats').limitToLast(50).on('value',s=>{
-            const e=document.getElementById('support-list'); e.innerHTML='';
-            const arr=[]; if(s.exists()) s.forEach(c=>arr.push(c.val()));
-            arr.reverse().forEach(m=>e.innerHTML+=`<div class="card" style="display:block"><div style="display:flex;justify-content:space-between"><b>@${m.username}</b> <small>${new Date(m.timestamp).toLocaleTimeString()}</small></div>${m.message}</div>`);
-        });
-
-        // USERS & PLANS
-        db.ref('users').on('value',s=>{allUsers=[]; s.forEach(c=>allUsers.push({key:c.key,...c.val()})); renderUsers(allUsers);});
-        function renderUsers(l){const e=document.getElementById('user-list');e.innerHTML='';l.forEach(u=>e.innerHTML+=`<div class="card"><div><b style="color:var(--primary)">@${u.key}</b><br>${u.profile?.name}<br>${u.profile?.mobile}</div><button class="btn btn-blue" onclick="openUser('${u.key}')">Manage</button></div>`);}
-        function searchUsers(){const q=document.getElementById('user-search').value.toLowerCase(); renderUsers(allUsers.filter(u=>(u.profile?.name||'').toLowerCase().includes(q)||u.key.includes(q)));}
-        async function openUser(uid){ currentUid=uid; document.getElementById('user-modal').style.display='flex'; const u=allUsers.find(x=>x.key===uid); document.getElementById('m-profile').innerHTML=`User: @${u.key}<br>Pass: ${u.password}`; const p=await db.ref('plans').get(); const sel=document.getElementById('gift-plan'); sel.innerHTML=''; if(p.exists())p.forEach(c=>sel.innerHTML+=`<option value="${c.val().name}|${c.val().days}">${c.val().name}</option>`); loadDetails(uid); }
-        function loadDetails(uid){ db.ref('websites').orderByChild('owner').equalTo(uid).on('value',s=>{const e=document.getElementById('m-webs');e.innerHTML='';if(s.exists())s.forEach(c=>e.innerHTML+=`<div style="background:#000;padding:5px;margin-bottom:5px;">${c.val().name} <button onclick="db.ref('websites/${c.key}').remove()">X</button></div>`)}); }
-        function giftSub(){const[n,d]=document.getElementById('gift-plan').value.split('|'); const s=document.getElementById('gift-site').value; if(s){db.ref('subscriptions').push({uid:currentUid,planName:n,websiteName:s,status:'active',expiryDate:Date.now()+(d*86400000)}); alert("Gifted");}}
-        function closeModal(){document.getElementById('user-modal').style.display='none';}
-
-        function addPlan(){ db.ref('plans').push({name:document.getElementById('pl-n').value,price:document.getElementById('pl-p').value,days:document.getElementById('pl-d').value,desc:document.getElementById('pl-desc').value}); }
-        db.ref('plans').on('value',s=>{const e=document.getElementById('plan-list');e.innerHTML='';if(s.exists())s.forEach(c=>e.innerHTML+=`<div class="card">${c.val().name} <button class="btn btn-red" onclick="db.ref('plans/${c.key}').remove()">X</button></div>`)});
-        function saveSet(){ db.ref('settings/qrCodeUrl').set(document.getElementById('set-qr').value); db.ref('settings/autoFreeUrl').set(document.getElementById('set-auto').value); alert("Saved"); }
-        db.ref('settings').on('value',s=>{if(s.val()){document.getElementById('set-qr').value=s.val().qrCodeUrl||'';document.getElementById('set-auto').value=s.val().autoFreeUrl||'';}});
-
-        // RENEWALS
-        db.ref('renewals').on('value',s=>{const e=document.getElementById('renewal-list');e.innerHTML='';if(s.exists())s.forEach(c=>{const r=c.val();e.innerHTML+=`<div class="card" style="display:block; border-left:3px solid #eab308"><b>RENEW: ${r.websiteName}</b><br>${r.name}<br><button class="btn btn-green" onclick="renew('${c.key}','${r.originalSubId}',${r.durationDays})">Extend</button> <button class="btn btn-red" onclick="db.ref('renewals/${c.key}').remove()">Reject</button></div>`})});
-        async function renew(k,sid,d){ if(confirm("Extend?")){ const sub=await db.ref('subscriptions/'+sid).get(); if(sub.exists()){ let base=Math.max(sub.val().expiryDate,Date.now()); await db.ref('subscriptions/'+sid).update({expiryDate:base+(d*86400000)}); await db.ref('renewals/'+k).remove(); alert("Done"); }}}
+            document.getElementById(`view-${view}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            if(window.innerWidth <= 900) toggleSidebar();
+        }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
     </script>
 </body>
 </html>
