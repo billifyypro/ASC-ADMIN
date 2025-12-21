@@ -57,7 +57,9 @@
         .btn-action { padding: 6px 10px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.9rem; margin-right: 5px; }
         .btn-edit { background: #e3f2fd; color: #1976d2; }
         .btn-del { background: #ffebee; color: #d32f2f; }
+        .btn-review { background: #fff8e1; color: #f57f17; }
         .btn-add { background: var(--primary); color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; border: none; }
+        .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
 
         /* Modal */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
@@ -67,6 +69,10 @@
         .form-label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
         .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
         .row { display: flex; gap: 15px; }
+        
+        /* Multiple Image Inputs */
+        .img-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .img-row button { background: #eee; border: none; cursor: pointer; pxadding: 0 10px; color: #333; }
         
         /* Status Badges */
         .badge { padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; display: inline-block; min-width: 80px; text-align: center; }
@@ -330,16 +336,48 @@
                         <input type="number" id="p-making" class="form-control" required>
                     </div>
                 </div>
+                
                 <div class="form-group">
-                    <label class="form-label">Image URL</label>
-                    <input type="url" id="p-img" class="form-control" required>
+                    <label class="form-label">Image URLs (First one is default)</label>
+                    <div id="p-imgs-container"></div>
+                    <button type="button" class="btn-sm btn-add" style="margin-top:5px; background:#eee; color:#333;" onclick="addImageInput()">+ Add Image</button>
                 </div>
+
                 <div class="form-group">
                     <label class="form-label">Description</label>
                     <textarea id="p-desc" class="form-control" rows="3"></textarea>
                 </div>
                 <button type="submit" class="btn-add" style="width:100%;">Save Product</button>
             </form>
+        </div>
+    </div>
+
+    <div id="review-modal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h3 class="serif">Add Manual Review</h3>
+                <i class="fas fa-times" onclick="closeModal('review-modal')" style="cursor:pointer;"></i>
+            </div>
+            <input type="hidden" id="rev-pid">
+            <div class="form-group">
+                <label class="form-label">Customer Name</label>
+                <input type="text" id="rev-name" class="form-control" placeholder="e.g. John Doe">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Star Rating (1-5)</label>
+                <select id="rev-stars" class="form-control">
+                    <option value="5">★★★★★ (5)</option>
+                    <option value="4">★★★★ (4)</option>
+                    <option value="3">★★★ (3)</option>
+                    <option value="2">★★ (2)</option>
+                    <option value="1">★ (1)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Remark</label>
+                <textarea id="rev-remark" class="form-control" rows="3" placeholder="Excellent product..."></textarea>
+            </div>
+            <button class="btn-add" style="width:100%;" onclick="saveFakeReview()">Add Review</button>
         </div>
     </div>
 
@@ -426,9 +464,12 @@
             });
         }
         function renderProductTable() {
-            document.getElementById('products-table').innerHTML = products.map(p => `
+            document.getElementById('products-table').innerHTML = products.map(p => {
+                // Backward compatibility for multiple images
+                const mainImg = (p.images && p.images.length > 0) ? p.images[0] : p.image;
+                return `
                 <tr>
-                    <td><img src="${p.image}"></td>
+                    <td><img src="${mainImg}"></td>
                     <td><b>${p.name}</b></td>
                     <td>${p.category}</td>
                     <td>${p.metal}</td>
@@ -437,14 +478,31 @@
                     <td>
                         <button class="btn-action btn-edit" onclick="openProductModal('${p.id}')"><i class="fas fa-edit"></i></button>
                         <button class="btn-action btn-del" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
+                        <button class="btn-action btn-review" onclick="openReviewModal('${p.id}')"><i class="fas fa-star"></i></button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
+        
+        // --- MULTIPLE IMAGES LOGIC ---
+        function addImageInput(value = '') {
+            const container = document.getElementById('p-imgs-container');
+            const div = document.createElement('div');
+            div.className = 'img-row';
+            div.innerHTML = `
+                <input type="url" class="form-control p-img-input" value="${value}" placeholder="Image URL" required>
+                <button type="button" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(div);
+        }
+
         function openProductModal(id = null) {
             const modal = document.getElementById('product-modal');
             const title = document.getElementById('modal-title');
             document.querySelector('form').reset();
+            const imgContainer = document.getElementById('p-imgs-container');
+            imgContainer.innerHTML = ''; // Clear previous inputs
+
             if(id) {
                 const p = products.find(x => x.id === id);
                 document.getElementById('p-id').value = p.id;
@@ -453,35 +511,87 @@
                 document.getElementById('p-metal').value = p.metal;
                 document.getElementById('p-weight').value = p.weight;
                 document.getElementById('p-making').value = p.makingCharge;
-                document.getElementById('p-img').value = p.image;
                 document.getElementById('p-desc').value = p.description || '';
+                
+                // Handle Multiple Images
+                if(p.images && p.images.length > 0) {
+                    p.images.forEach(url => addImageInput(url));
+                } else if (p.image) {
+                    addImageInput(p.image);
+                } else {
+                    addImageInput();
+                }
+
                 title.innerText = "Edit Product";
             } else {
                 document.getElementById('p-id').value = '';
+                addImageInput(); // Add one empty input
                 title.innerText = "Add Product";
             }
             modal.classList.add('active');
         }
+
         async function saveProduct(e) {
             e.preventDefault();
             const id = document.getElementById('p-id').value;
+            
+            // Collect all image URLs
+            const imgInputs = document.querySelectorAll('.p-img-input');
+            const images = Array.from(imgInputs).map(i => i.value.trim()).filter(val => val !== '');
+
             const data = {
                 name: document.getElementById('p-name').value,
                 category: document.getElementById('p-cat').value,
                 metal: document.getElementById('p-metal').value,
                 weight: parseFloat(document.getElementById('p-weight').value),
                 makingCharge: parseFloat(document.getElementById('p-making').value),
-                image: document.getElementById('p-img').value,
+                images: images, // Save as array
+                image: images.length > 0 ? images[0] : '', // Backward compatibility: keep primary image field
                 description: document.getElementById('p-desc').value,
                 updatedAt: new Date()
             };
+            
             if(id) await db.collection('products').doc(id).update(data);
             else await db.collection('products').add(data);
+            
             closeModal('product-modal');
             showToast('Product Saved');
         }
+
         async function deleteProduct(id) {
             if(confirm("Delete product?")) await db.collection('products').doc(id).delete();
+        }
+
+        // --- FAKE REVIEWS ---
+        function openReviewModal(pid) {
+            document.getElementById('rev-pid').value = pid;
+            document.getElementById('rev-name').value = '';
+            document.getElementById('rev-stars').value = '5';
+            document.getElementById('rev-remark').value = '';
+            document.getElementById('review-modal').classList.add('active');
+        }
+
+        async function saveFakeReview() {
+            const pid = document.getElementById('rev-pid').value;
+            const name = document.getElementById('rev-name').value || "Verified Customer";
+            const stars = parseInt(document.getElementById('rev-stars').value);
+            const remark = document.getElementById('rev-remark').value;
+
+            if(!pid) return;
+
+            const reviewData = {
+                productId: pid,
+                userId: 'admin_fake_' + Date.now(),
+                userName: name,
+                stars: stars,
+                remark: remark,
+                isFake: true,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection('ratings').add(reviewData);
+            closeModal('review-modal');
+            showToast('Review Added Successfully');
         }
 
         // --- ORDERS ---
