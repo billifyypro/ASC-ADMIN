@@ -149,6 +149,7 @@
                     <div class="rate-input-group">
                         <input type="number" id="rate-gold" class="rate-input" placeholder="Gold Rate">
                         <input type="number" id="rate-silver" class="rate-input" placeholder="Silver Rate">
+                        <input type="number" id="rate-italian" class="rate-input" placeholder="Italian Silver Rate">
                         <button class="btn-gold" onclick="updateRates()">UPDATE</button>
                     </div>
                 </div>
@@ -323,6 +324,17 @@
                         <select id="p-metal" class="form-control">
                             <option value="gold">Gold</option>
                             <option value="silver">Silver</option>
+                            <option value="italian">Italian Silver</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Karat</label>
+                        <select id="p-karat" class="form-control">
+                            <option value="24K">24K</option>
+                            <option value="22K">22K</option>
+                            <option value="18K">18K</option>
+                            <option value="14K">14K</option>
+                            <option value="925">925</option>
                         </select>
                     </div>
                 </div>
@@ -425,13 +437,15 @@
                     const data = doc.data();
                     document.getElementById('rate-gold').value = data.gold;
                     document.getElementById('rate-silver').value = data.silver;
+                    document.getElementById('rate-italian').value = data.italian || '';
                 }
             });
         }
         async function updateRates() {
             const gold = parseFloat(document.getElementById('rate-gold').value);
             const silver = parseFloat(document.getElementById('rate-silver').value);
-            await db.collection('rates').doc('current').set({ gold, silver }, { merge: true });
+            const italian = parseFloat(document.getElementById('rate-italian').value);
+            await db.collection('rates').doc('current').set({ gold, silver, italian }, { merge: true });
             showToast('Rates Updated');
         }
 
@@ -509,6 +523,7 @@
                 document.getElementById('p-name').value = p.name;
                 document.getElementById('p-cat').value = p.category;
                 document.getElementById('p-metal').value = p.metal;
+                document.getElementById('p-karat').value = p.karat || '22K';
                 document.getElementById('p-weight').value = p.weight;
                 document.getElementById('p-making').value = p.makingCharge;
                 document.getElementById('p-desc').value = p.description || '';
@@ -543,6 +558,7 @@
                 name: document.getElementById('p-name').value,
                 category: document.getElementById('p-cat').value,
                 metal: document.getElementById('p-metal').value,
+                karat: document.getElementById('p-karat').value,
                 weight: parseFloat(document.getElementById('p-weight').value),
                 makingCharge: parseFloat(document.getElementById('p-making').value),
                 images: images, // Save as array
