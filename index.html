@@ -24,9 +24,13 @@
         aside { width: var(--sidebar-w); background: var(--primary); color: white; display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
         .brand { font-size: 24px; padding: 30px; text-align: center; color: var(--gold); border-bottom: 1px solid #333; letter-spacing: 2px; }
         .nav-links { padding: 20px 0; flex: 1; overflow-y: auto; }
-        .nav-item { padding: 15px 30px; cursor: pointer; color: #aaa; transition: 0.3s; display: flex; align-items: center; gap: 15px; }
+        .nav-item { padding: 15px 30px; cursor: pointer; color: #aaa; transition: 0.3s; display: flex; align-items: center; gap: 15px; position: relative; }
         .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.05); color: var(--gold); border-left: 4px solid var(--gold); }
         .nav-item i { width: 20px; text-align: center; }
+        
+        /* Notification Dot */
+        .notification-dot { width: 8px; height: 8px; background-color: #ff4444; border-radius: 50%; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: none; box-shadow: 0 0 5px #ff4444; }
+        .notification-dot.visible { display: block; }
 
         /* Main Content */
         main { flex: 1; overflow-y: auto; padding: 30px; position: relative; }
@@ -45,11 +49,15 @@
         .rate-input { background: rgba(255,255,255,0.1); border: 1px solid #444; color: white; padding: 10px; border-radius: 4px; flex: 1; min-width: 120px; outline: none; }
         .rate-input:focus { border-color: var(--gold); }
         .btn-gold { background: var(--gold); color: black; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+        
+        /* Stats Control */
+        .stats-control-group { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
+        .stats-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 120px; }
 
         /* Tables */
         .table-wrap { background: var(--white); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border); }
+        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top;}
         th { background: #f9fafb; font-weight: 600; color: #555; }
         td img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
         
@@ -59,6 +67,8 @@
         .btn-del { background: #ffebee; color: #d32f2f; }
         .btn-review { background: #fff8e1; color: #f57f17; }
         .btn-add { background: var(--primary); color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; border: none; }
+        .btn-reset { background: #333; color: #fff; font-size: 0.7rem; padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; margin-left: 10px; }
+        .btn-reset:hover { background: #555; }
         .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
 
         /* Modal */
@@ -123,6 +133,7 @@
             </div>
             <div class="nav-item" onclick="switchView('orders')">
                 <i class="fas fa-shopping-basket"></i> Orders
+                <span id="orders-dot" class="notification-dot"></span>
             </div>
             <div class="nav-item" onclick="switchView('users')">
                 <i class="fas fa-users"></i> Users
@@ -145,16 +156,26 @@
 
             <div class="stats-grid">
                 <div class="card rate-card" style="grid-column: 1 / -1;">
-                    <div class="stat-label" style="color:var(--gold);">Live Rates (INR / gram)</div>
+                    <div class="stat-label" style="color:var(--gold);">Live Rates & Counters</div>
                     <div class="rate-input-group">
                         <input type="number" id="rate-gold" class="rate-input" placeholder="Gold Rate">
                         <input type="number" id="rate-silver" class="rate-input" placeholder="Silver Rate">
                         <input type="number" id="rate-italian" class="rate-input" placeholder="Italian Silver Rate">
-                        <button class="btn-gold" onclick="updateRates()">UPDATE</button>
+                        <button class="btn-gold" onclick="updateRates()">UPDATE RATES</button>
+                    </div>
+                    <div style="margin-top: 15px; padding-top:15px; border-top: 1px solid #444;">
+                         <div class="stat-label" style="color:#aaa; font-size:0.75rem;">Completed Orders (Manual Override)</div>
+                         <div class="stats-control-group">
+                            <input type="number" id="manual-orders-count" class="rate-input" placeholder="Ex: 5000" style="background:white; color:black;">
+                            <button class="btn-gold" style="padding: 8px 15px;" onclick="saveManualCount()">SAVE COUNT</button>
+                         </div>
                     </div>
                 </div>
                 <div class="card">
-                    <div class="stat-label">Total Revenue</div>
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div class="stat-label">Total Revenue</div>
+                        <button class="btn-reset" onclick="resetRevenue()" title="Reset display to 0 without deleting orders">RESET</button>
+                    </div>
                     <div class="stat-val" id="st-rev">₹0</div>
                 </div>
                 <div class="card">
@@ -219,7 +240,8 @@
                             <th>Order #</th>
                             <th>Date</th>
                             <th>Customer</th>
-                            <th>Details</th>
+                            <th>Item Details (Name | Cat | Qty)</th>
+                            <th>Amount</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -414,23 +436,36 @@
         let products = [];
         let categories = [];
         let orders = [];
+        let revenueOffset = 0;
+        let activeView = 'dash';
 
         // INIT
         document.addEventListener("DOMContentLoaded", () => {
             fetchRates();
-            fetchProducts();
+            fetchProducts(); // Must fetch first to map categories in orders
             fetchCategories();
             fetchOrders();
             fetchUsers();
             fetchSettings();
+            fetchStatsConfig();
         });
 
-        // --- SIDEBAR ---
+        // --- SIDEBAR & NOTIFICATIONS ---
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
         }
+        
+        function updateOrderNotification() {
+            const hasPending = orders.some(o => o.status !== 'Delivered');
+            const dot = document.getElementById('orders-dot');
+            if (hasPending && activeView !== 'orders') {
+                dot.classList.add('visible');
+            } else {
+                dot.classList.remove('visible');
+            }
+        }
 
-        // --- RATES ---
+        // --- RATES & STATS ---
         function fetchRates() {
             db.collection('rates').doc('current').onSnapshot(doc => {
                 if(doc.exists) {
@@ -441,12 +476,42 @@
                 }
             });
         }
+        
+        function fetchStatsConfig() {
+            // New config doc for stats (Manual count & Revenue Offset)
+            db.collection('config').doc('stats').onSnapshot(doc => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    revenueOffset = data.revenueOffset || 0;
+                    document.getElementById('manual-orders-count').value = data.manualOrderCount || '';
+                    updateStats(); // Recalculate with new offset
+                }
+            });
+        }
+
         async function updateRates() {
             const gold = parseFloat(document.getElementById('rate-gold').value);
             const silver = parseFloat(document.getElementById('rate-silver').value);
             const italian = parseFloat(document.getElementById('rate-italian').value);
             await db.collection('rates').doc('current').set({ gold, silver, italian }, { merge: true });
             showToast('Rates Updated');
+        }
+
+        async function saveManualCount() {
+            const count = parseInt(document.getElementById('manual-orders-count').value);
+            if(isNaN(count)) return;
+            await db.collection('config').doc('stats').set({ manualOrderCount: count }, { merge: true });
+            showToast('Manual Order Count Saved');
+        }
+        
+        async function resetRevenue() {
+            // Non-destructive: We verify current Total, and set it as offset
+            const currentTotalRev = orders.filter(o => o.status !== 'Cancelled').reduce((acc, o) => acc + (o.total || 0), 0);
+            
+            if(confirm("Are you sure? This will set displayed revenue to 0. No data will be deleted.")) {
+                 await db.collection('config').doc('stats').set({ revenueOffset: currentTotalRev }, { merge: true });
+                 showToast('Revenue Display Reset');
+            }
         }
 
         // --- CATEGORIES ---
@@ -475,6 +540,8 @@
             db.collection('products').onSnapshot(snap => {
                 products = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderProductTable();
+                // If orders are already loaded, re-render them to populate category names
+                if(orders.length > 0) renderOrders(); 
             });
         }
         function renderProductTable() {
@@ -616,14 +683,29 @@
                 orders = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderOrders();
                 updateStats();
+                updateOrderNotification();
             });
         }
+        
         function renderOrders() {
-            const getRow = (o) => `
+            const getRow = (o) => {
+                // Generate Item Details string: Name (Category) xQty
+                const details = o.items.map(item => {
+                    // Try to find product to get real category (since category might not be in order items array)
+                    const productRef = products.find(p => p.id === item.id);
+                    const cat = productRef ? productRef.category : '';
+                    return `<div style="font-size:0.9rem; margin-bottom:4px;">
+                              <b>${item.name}</b> ${cat ? `(${cat})` : ''} 
+                              <span style="color:#666">x${item.qty}</span>
+                            </div>`;
+                }).join('');
+
+                return `
                 <tr>
                     <td>#${o.id.slice(0,6).toUpperCase()}</td>
                     <td>${o.createdAt ? o.createdAt.toDate().toLocaleDateString() : '-'}</td>
                     <td>${o.customerDetails?.name || o.userName}<br><span style="font-size:0.8rem; color:#888;">${o.customerDetails?.phone || o.userPhone}</span></td>
+                    <td>${details}</td>
                     <td>
                         <div style="font-size:0.9rem">Sub: ₹${o.subtotal?.toFixed(2) || 0}</div>
                         <div style="font-size:0.9rem">Del: +₹${o.deliveryCharge || 0}</div>
@@ -642,6 +724,7 @@
                         </select>
                     </td>
                 </tr>`;
+            };
 
             document.getElementById('orders-table').innerHTML = orders.map(getRow).join('');
             document.getElementById('dash-orders-table').querySelector('tbody').innerHTML = orders.slice(0,5).map(o => `
@@ -653,14 +736,22 @@
                 </tr>
             `).join('');
         }
+        
         async function updateStatus(oid, status) {
             if(!status) return;
             await db.collection('orders').doc(oid).update({ status });
             showToast(`Status updated to ${status}`);
         }
+        
         function updateStats() {
-            const revenue = orders.filter(o=>o.status!=='Cancelled').reduce((acc, o) => acc + (o.total || 0), 0);
-            document.getElementById('st-rev').innerText = '₹' + revenue.toLocaleString('en-IN');
+            // Calculate real total
+            const realRevenue = orders.filter(o => o.status !== 'Cancelled').reduce((acc, o) => acc + (o.total || 0), 0);
+            
+            // Apply Offset (Reset Revenue Logic)
+            let displayRevenue = realRevenue - revenueOffset;
+            if (displayRevenue < 0) displayRevenue = 0;
+
+            document.getElementById('st-rev').innerText = '₹' + displayRevenue.toLocaleString('en-IN');
             document.getElementById('st-ord').innerText = orders.length;
         }
 
@@ -730,12 +821,17 @@
 
         // --- UTILS ---
         function switchView(view) {
+            activeView = view;
             ['dash', 'products', 'categories', 'orders', 'users', 'settings'].forEach(v => {
                 document.getElementById(`view-${v}`).classList.add('hidden');
             });
             document.getElementById(`view-${view}`).classList.remove('hidden');
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             event.currentTarget.classList.add('active');
+            
+            // Check notifications logic (Hide red dot if viewing orders)
+            updateOrderNotification();
+
             if(window.innerWidth <= 900) toggleSidebar();
         }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
