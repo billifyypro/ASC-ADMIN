@@ -52,13 +52,13 @@
         
         /* Stats Control */
         .stats-control-group { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
-        .stats-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 120px; }
 
         /* Tables */
         .table-wrap { background: var(--white); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top;}
         th { background: #f9fafb; font-weight: 600; color: #555; }
+        /* FIX: Admin Image Preview */
         td img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
         
         /* Buttons */
@@ -99,6 +99,26 @@
         .coupon-tag { background: #f0f0f0; border: 1px solid #ddd; padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 10px; }
         .coupon-tag i { cursor: pointer; color: #d32f2f; }
 
+        /* TRACKING & BUCKET STYLES */
+        .track-result-box { margin-top: 20px; padding: 20px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; display: none; }
+        .track-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 10px; }
+        .track-row:last-child { border: none; margin: 0; padding: 0; }
+        
+        .bucket-container { margin-top: 20px; display: none; }
+        .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
+        .bucket-item { background: white; border: 1px solid #eee; border-radius: 6px; padding: 10px; }
+        
+        /* IMAGE GLITCH FIX APPLIED HERE */
+        .bucket-img { 
+            width: 100%; 
+            height: 120px; 
+            object-fit: contain; /* FIX: No cover */
+            background-color: #f5f5f5;
+            mix-blend-mode: normal; /* FIX: No multiply */
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
         /* Toast */
         #toast { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: var(--gold); padding: 15px 25px; border-radius: 4px; opacity: 0; transition: 0.3s; pointer-events: none; }
         #toast.show { opacity: 1; bottom: 50px; }
@@ -124,6 +144,9 @@
         <div class="nav-links">
             <div class="nav-item active" onclick="switchView('dash')">
                 <i class="fas fa-chart-pie"></i> Dashboard
+            </div>
+            <div class="nav-item" onclick="switchView('tracking')">
+                <i class="fas fa-search-location"></i> Track Order
             </div>
             <div class="nav-item" onclick="switchView('products')">
                 <i class="fas fa-gem"></i> Products
@@ -192,6 +215,32 @@
                         <tbody></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <div id="view-tracking" class="hidden">
+            <div class="header">
+                <h2 class="title serif">Track Order</h2>
+            </div>
+            <div class="card" style="max-width: 800px;">
+                <div class="form-group">
+                    <label class="form-label">Enter Order ID</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="track-id-input" class="form-control" placeholder="e.g. ORD-ASC-2025-0001">
+                        <button class="btn-add" onclick="trackOrder()">Track</button>
+                    </div>
+                </div>
+
+                <div id="track-result" class="track-result-box">
+                    <div id="track-details"></div>
+                    <button class="btn-add" style="margin-top: 20px; width: 100%;" onclick="loadBucket()">Load Bucket (View Products)</button>
+                    
+                    <div id="bucket-container" class="bucket-container">
+                        <h4 class="serif" style="margin-bottom:10px; border-bottom:1px solid #ddd; padding-bottom:5px;">Bucket Products (Pending)</h4>
+                        <div id="bucket-grid" class="bucket-grid"></div>
+                    </div>
+                </div>
+                <div id="track-error" style="color: red; margin-top: 10px; display: none;">Order not found. Please check ID.</div>
             </div>
         </div>
 
@@ -372,7 +421,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Image URLs (First one is default)</label>
+                    <label class="form-label">Image URLs (Must start with https://)</label>
                     <div id="p-imgs-container"></div>
                     <button type="button" class="btn-sm btn-add" style="margin-top:5px; background:#eee; color:#333;" onclick="addImageInput()">+ Add Image</button>
                 </div>
@@ -438,11 +487,12 @@
         let orders = [];
         let revenueOffset = 0;
         let activeView = 'dash';
+        let foundOrderData = null; // Stores currently tracked order
 
         // INIT
         document.addEventListener("DOMContentLoaded", () => {
             fetchRates();
-            fetchProducts(); // Must fetch first to map categories in orders
+            fetchProducts(); 
             fetchCategories();
             fetchOrders();
             fetchUsers();
@@ -465,6 +515,62 @@
             }
         }
 
+        // --- TRACKING & BUCKET LOGIC (NEW) ---
+        async function trackOrder() {
+            const id = document.getElementById('track-id-input').value.trim();
+            const resultBox = document.getElementById('track-result');
+            const errorBox = document.getElementById('track-error');
+            const bucketContainer = document.getElementById('bucket-container');
+
+            // Reset UI
+            resultBox.style.display = 'none';
+            errorBox.style.display = 'none';
+            bucketContainer.style.display = 'none';
+            foundOrderData = null;
+
+            if(!id) return;
+
+            // Query by string orderId (not doc id)
+            const snap = await db.collection('orders').where('orderId', '==', id).get();
+            
+            if(snap.empty) {
+                errorBox.style.display = 'block';
+            } else {
+                const data = snap.docs[0].data();
+                foundOrderData = data;
+                
+                const dateStr = data.createdAt ? data.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const customer = data.customerDetails || {};
+
+                document.getElementById('track-details').innerHTML = `
+                    <div class="track-row"><span>Order ID</span> <b>${data.orderId}</b></div>
+                    <div class="track-row"><span>Customer Name</span> <b>${customer.name || 'N/A'}</b></div>
+                    <div class="track-row"><span>Mobile</span> <b>${customer.phone || 'N/A'}</b></div>
+                    <div class="track-row"><span>Full Address</span> <span style="text-align:right; font-size:0.9rem;">${customer.address || 'N/A'}</span></div>
+                    <div class="track-row"><span>Order Date</span> <b>${dateStr}</b></div>
+                    <div class="track-row"><span>Status</span> <span class="badge st-${data.status}">${data.status}</span></div>
+                `;
+                resultBox.style.display = 'block';
+            }
+        }
+
+        function loadBucket() {
+            if(!foundOrderData) return;
+            const container = document.getElementById('bucket-container');
+            const grid = document.getElementById('bucket-grid');
+            
+            grid.innerHTML = foundOrderData.items.map(item => `
+                <div class="bucket-item">
+                    <img src="${item.image || 'https://via.placeholder.com/150'}" class="bucket-img" loading="lazy" decoding="async">
+                    <div style="font-weight:bold; font-size:0.9rem; margin-bottom:5px;">${item.name}</div>
+                    <div style="font-size:0.8rem; color:#666; margin-bottom:5px;">${item.description || 'No description'}</div>
+                    <span class="badge st-${foundOrderData.status}" style="font-size:0.7rem;">${foundOrderData.status}</span>
+                </div>
+            `).join('');
+
+            container.style.display = 'block';
+        }
+
         // --- RATES & STATS ---
         function fetchRates() {
             db.collection('rates').doc('current').onSnapshot(doc => {
@@ -478,13 +584,12 @@
         }
         
         function fetchStatsConfig() {
-            // New config doc for stats (Manual count & Revenue Offset)
             db.collection('config').doc('stats').onSnapshot(doc => {
                 if(doc.exists) {
                     const data = doc.data();
                     revenueOffset = data.revenueOffset || 0;
                     document.getElementById('manual-orders-count').value = data.manualOrderCount || '';
-                    updateStats(); // Recalculate with new offset
+                    updateStats(); 
                 }
             });
         }
@@ -505,9 +610,7 @@
         }
         
         async function resetRevenue() {
-            // Non-destructive: We verify current Total, and set it as offset
             const currentTotalRev = orders.filter(o => o.status !== 'Cancelled').reduce((acc, o) => acc + (o.total || 0), 0);
-            
             if(confirm("Are you sure? This will set displayed revenue to 0. No data will be deleted.")) {
                  await db.collection('config').doc('stats').set({ revenueOffset: currentTotalRev }, { merge: true });
                  showToast('Revenue Display Reset');
@@ -540,13 +643,11 @@
             db.collection('products').onSnapshot(snap => {
                 products = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderProductTable();
-                // If orders are already loaded, re-render them to populate category names
                 if(orders.length > 0) renderOrders(); 
             });
         }
         function renderProductTable() {
             document.getElementById('products-table').innerHTML = products.map(p => {
-                // Backward compatibility for multiple images
                 const mainImg = (p.images && p.images.length > 0) ? p.images[0] : p.image;
                 return `
                 <tr>
@@ -565,13 +666,12 @@
             `}).join('');
         }
         
-        // --- MULTIPLE IMAGES LOGIC ---
         function addImageInput(value = '') {
             const container = document.getElementById('p-imgs-container');
             const div = document.createElement('div');
             div.className = 'img-row';
             div.innerHTML = `
-                <input type="url" class="form-control p-img-input" value="${value}" placeholder="Image URL" required>
+                <input type="url" class="form-control p-img-input" value="${value}" placeholder="Image URL (https://...)" required>
                 <button type="button" onclick="this.parentElement.remove()">X</button>
             `;
             container.appendChild(div);
@@ -582,7 +682,7 @@
             const title = document.getElementById('modal-title');
             document.querySelector('form').reset();
             const imgContainer = document.getElementById('p-imgs-container');
-            imgContainer.innerHTML = ''; // Clear previous inputs
+            imgContainer.innerHTML = ''; 
 
             if(id) {
                 const p = products.find(x => x.id === id);
@@ -595,7 +695,6 @@
                 document.getElementById('p-making').value = p.makingCharge;
                 document.getElementById('p-desc').value = p.description || '';
                 
-                // Handle Multiple Images
                 if(p.images && p.images.length > 0) {
                     p.images.forEach(url => addImageInput(url));
                 } else if (p.image) {
@@ -607,7 +706,7 @@
                 title.innerText = "Edit Product";
             } else {
                 document.getElementById('p-id').value = '';
-                addImageInput(); // Add one empty input
+                addImageInput(); 
                 title.innerText = "Add Product";
             }
             modal.classList.add('active');
@@ -617,9 +716,27 @@
             e.preventDefault();
             const id = document.getElementById('p-id').value;
             
-            // Collect all image URLs
+            // Collect images
             const imgInputs = document.querySelectorAll('.p-img-input');
-            const images = Array.from(imgInputs).map(i => i.value.trim()).filter(val => val !== '');
+            const images = [];
+            let hasError = false;
+
+            imgInputs.forEach(i => {
+                const val = i.value.trim();
+                // IMAGE VALIDATION: CHECK HTTPS
+                if(val) {
+                    if(!val.startsWith('https://')) {
+                        hasError = true;
+                    } else {
+                        images.push(val);
+                    }
+                }
+            });
+
+            if(hasError) {
+                alert("Only https:// image URLs are allowed.");
+                return;
+            }
 
             const data = {
                 name: document.getElementById('p-name').value,
@@ -628,8 +745,8 @@
                 karat: document.getElementById('p-karat').value,
                 weight: parseFloat(document.getElementById('p-weight').value),
                 makingCharge: parseFloat(document.getElementById('p-making').value),
-                images: images, // Save as array
-                image: images.length > 0 ? images[0] : '', // Backward compatibility: keep primary image field
+                images: images, 
+                image: images.length > 0 ? images[0] : '', 
                 description: document.getElementById('p-desc').value,
                 updatedAt: new Date()
             };
@@ -689,9 +806,7 @@
         
         function renderOrders() {
             const getRow = (o) => {
-                // Generate Item Details string: Name (Category) xQty
                 const details = o.items.map(item => {
-                    // Try to find product to get real category (since category might not be in order items array)
                     const productRef = products.find(p => p.id === item.id);
                     const cat = productRef ? productRef.category : '';
                     return `<div style="font-size:0.9rem; margin-bottom:4px;">
@@ -700,9 +815,12 @@
                             </div>`;
                 }).join('');
 
+                // Display custom generated Order ID instead of Doc ID
+                const displayId = o.orderId || o.id.slice(0,6).toUpperCase();
+
                 return `
                 <tr>
-                    <td>#${o.id.slice(0,6).toUpperCase()}</td>
+                    <td>#${displayId}</td>
                     <td>${o.createdAt ? o.createdAt.toDate().toLocaleDateString() : '-'}</td>
                     <td>${o.customerDetails?.name || o.userName}<br><span style="font-size:0.8rem; color:#888;">${o.customerDetails?.phone || o.userPhone}</span></td>
                     <td>${details}</td>
@@ -729,7 +847,7 @@
             document.getElementById('orders-table').innerHTML = orders.map(getRow).join('');
             document.getElementById('dash-orders-table').querySelector('tbody').innerHTML = orders.slice(0,5).map(o => `
                 <tr>
-                    <td>#${o.id.slice(0,6).toUpperCase()}</td>
+                    <td>#${o.orderId || o.id.slice(0,6)}</td>
                     <td>${o.customerDetails?.name || 'User'}</td>
                     <td>₹${o.total.toFixed(2)}</td>
                     <td><span class="badge st-${o.status}">${o.status}</span></td>
@@ -744,10 +862,7 @@
         }
         
         function updateStats() {
-            // Calculate real total
             const realRevenue = orders.filter(o => o.status !== 'Cancelled').reduce((acc, o) => acc + (o.total || 0), 0);
-            
-            // Apply Offset (Reset Revenue Logic)
             let displayRevenue = realRevenue - revenueOffset;
             if (displayRevenue < 0) displayRevenue = 0;
 
@@ -777,12 +892,10 @@
 
         // --- SETTINGS & COUPONS ---
         function fetchSettings() {
-            // Delivery Charge
             db.collection('config').doc('store').onSnapshot(doc => {
                 if(doc.exists) document.getElementById('setting-delivery').value = doc.data().deliveryCharge || 0;
             });
 
-            // Coupons
             db.collection('coupons').onSnapshot(snap => {
                 const coupons = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 document.getElementById('active-coupons').innerHTML = coupons.map(c => `
@@ -822,14 +935,13 @@
         // --- UTILS ---
         function switchView(view) {
             activeView = view;
-            ['dash', 'products', 'categories', 'orders', 'users', 'settings'].forEach(v => {
+            ['dash', 'tracking', 'products', 'categories', 'orders', 'users', 'settings'].forEach(v => {
                 document.getElementById(`view-${v}`).classList.add('hidden');
             });
             document.getElementById(`view-${view}`).classList.remove('hidden');
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             event.currentTarget.classList.add('active');
             
-            // Check notifications logic (Hide red dot if viewing orders)
             updateOrderNotification();
 
             if(window.innerWidth <= 900) toggleSidebar();
